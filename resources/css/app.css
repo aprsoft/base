@@ -11,7 +11,7 @@
 @source '../**/*.js';
 
 
-/* PowerGrid 6 - Tailwind CSS 4 */
+/* PowerGrid v.6 - Tailwind CSS 4 */
 @source '../../app/Livewire/*Table.php';
 @source '../../app/Livewire/**/*Table.php';
 @source '../../vendor/power-components/livewire-powergrid/src/Themes/Tailwind.php';
