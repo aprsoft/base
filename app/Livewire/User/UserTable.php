@@ -75,14 +75,14 @@ final class UserTable extends PowerGridComponent
         ];
     }
 
-    public function filters(): array
-    {
-        return [
-            Filter::inputText('name')->operators(['contains']),
-            Filter::inputText('email')->operators(['contains']),
-            Filter::datetimepicker('created_at'),
-        ];
-    }
+    // public function filters(): array
+    // {
+    //     return [
+    //         Filter::inputText('name')->operators(['contains']),
+    //         Filter::inputText('email')->operators(['contains']),
+    //         Filter::datetimepicker('created_at'),
+    //     ];
+    // }
 
     #[\Livewire\Attributes\On('edit')]
     public function edit($rowId): void
@@ -92,12 +92,25 @@ final class UserTable extends PowerGridComponent
 
     public function actions(user $row): array
     {
-        return [
-            Button::add('edit')
-                ->slot('Edit: '.$row->id)
-                ->id()
-                ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
-                ->dispatch('edit', ['rowId' => $row->id])
+        // return [
+        //     Button::add('edit')
+        //         ->slot('Edit: '.$row->id)
+        //         ->id()
+        //         ->class('pg-btn-white dark:ring-pg-primary-600 dark:border-pg-primary-600 dark:hover:bg-pg-primary-700 dark:ring-offset-pg-primary-800 dark:text-pg-primary-300 dark:bg-pg-primary-700')
+        //         ->dispatch('edit', ['rowId' => $row->id])
+        // ];
+
+        return [    
+            
+            Button::add('show') 
+                ->icon('default-eye')               
+                ->class('px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center')
+                ->route('users.show', ['user' => $row->id]),   
+
+             Button::add('edit')
+                ->icon('default-pencil')               
+                ->class('px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center justify-center')
+                ->route('users.edit', ['user' => $row->id]),   
         ];
     }
 
