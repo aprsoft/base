@@ -40,5 +40,6 @@
     "Current Password": "Contraseña actual",
     "Enter your current password": "Ingresa tu contraseña actual",
     "Update password": "Actualizar contraseña",
-    "Home": "Inicio"
+    "Home": "Inicio",
+    "A reset link will be sent if the account exists.":"Si existe una cuenta asociada a este correo electrónico, recibirás un enlace para restablecer tu contraseña."
 }
