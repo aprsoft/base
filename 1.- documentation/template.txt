@@ -1,0 +1,3 @@
+https://github.com/LaravelDaily/TailAdmin-Laravel-Starter-Kit
+
+Descargar .zip y usar composer install, NO USAR laravel new --using=laraveldaily/tailadmin-starter-kit
