@@ -7,26 +7,31 @@ use App\Models\User;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+  
     public function index()
     {        
 
         return view('users.index', ['title'=> 'Usuarios']);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    public function show(User $user)
+    {
+        
+        return view('users.show',['title'=>'Mostrar Usuario','user'=> $user]);
+    }
+
+    public function create()
+    {
+        return view('users.create',['title'=>'Crear Usuario']);
+    }
+
+   
     public function edit(User $user)
     {
         return view('users.edit', compact('user'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+   
     public function update(UpdateUserRequest $request, User $user)
     {
         $user->update($request->validated());

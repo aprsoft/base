@@ -122,6 +122,11 @@
             <!-- app header start -->
             @include('layouts.app-header')
             <!-- app header end -->
+
+            {{-- Alertas generales --}}
+            @include('partials.alert')
+
+
             <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
                 @yield('content')
             </div>
@@ -129,8 +134,11 @@
 
     </div>
 
+    {{-- Modal global de confirmación --}}
+    <x-ui.confirm-modal />
 </body>
 
+@livewireScriptConfig
 @stack('scripts')
 
 </html>

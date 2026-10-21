@@ -18,7 +18,7 @@ final class UserTable extends PowerGridComponent
 
     public function setUp(): array
     {
-        $this->showCheckBox();
+        // $this->showCheckBox();
 
         return [
             PowerGrid::header()
@@ -48,8 +48,11 @@ final class UserTable extends PowerGridComponent
            /** Example of custom column using a closure **/
             ->add('name_lower', fn (user $model) => strtolower(e($model->name)))
 
-            ->add('email')
-            ->add('created_at_formatted', fn (user $model) => Carbon::parse($model->created_at)->format('d/m/Y H:i:s'));
+            ->add('email');
+            // ->add('created_at_formatted', fn (user $model) => Carbon::parse($model->created_at)->format('d/m/Y H:i:s'));
+
+            // ->add('email')
+            // ->add('created_at_formatted', fn (user $model) => Carbon::parse($model->created_at)->format('d/m/Y H:i:s'));
     }
 
     public function columns(): array
@@ -64,8 +67,9 @@ final class UserTable extends PowerGridComponent
                 ->sortable()
                 ->searchable(),
 
-            Column::make('Created at', 'created_at_formatted', 'created_at')
-                ->sortable(),
+            // Column::make('Created at', 'created_at_formatted', 'created_at')
+            //     ->sortable()
+            //     ->searchable(),
 
             Column::action('Action')
         ];

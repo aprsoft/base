@@ -3,6 +3,8 @@
 @import "tailwindcss";
 @import '../../vendor/power-components/livewire-powergrid/resources/css/tailwind4.css';
 
+@import 'flatpickr/dist/flatpickr.min.css';
+
 
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
