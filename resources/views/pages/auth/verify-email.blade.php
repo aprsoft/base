@@ -11,7 +11,7 @@
                         <svg class="stroke-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
                             <path d="M12.7083 5L7.5 10.2083L12.7083 15.4167" stroke="" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
-                        Back to dashboard
+                        {{ __('Back to dashboard') }}
                     </a>
                 </div>
                 <div class="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
@@ -23,16 +23,16 @@
                                 </svg>
                             </div>
                             <h1 class="text-title-sm sm:text-title-md mb-2 font-semibold text-gray-800 dark:text-white/90">
-                                Verify Your Email
+                                {{ __('Verify Your Email') }}
                             </h1>
                             <p class="text-sm text-gray-500 dark:text-gray-400">
-                                Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn't receive the email, we will gladly send you another.
+                                {{ __("Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn't receive the email, we will gladly send you another.") }}
                             </p>
                         </div>
                         <div>
                             @if (session('status') == 'verification-link-sent')
                                 <div class="mb-4 rounded-lg bg-success-50 p-4 text-sm text-success-700 dark:bg-success-500/10 dark:text-success-400">
-                                    A new verification link has been sent to the email address you provided during registration.
+                                    {{ __('A new verification link has been sent to the email address you provided during registration.') }}
                                 </div>
                             @endif
                             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -40,14 +40,14 @@
                                     @csrf
                                     <button type="submit"
                                         class="bg-brand-500 shadow-theme-xs hover:bg-brand-600 flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-medium text-white transition sm:w-auto">
-                                        Resend Verification Email
+                                        {{ __('Resend Verification Email') }}
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <button type="submit"
                                         class="flex w-full items-center justify-center rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 sm:w-auto">
-                                        Log Out
+                                        {{ __('Log Out') }}
                                     </button>
                                 </form>
                             </div>
@@ -65,7 +65,7 @@
                             <img src="{{ asset('images/logo/auth-logo.svg') }}" alt="Logo" />
                         </a>
                         <p class="text-center text-gray-400 dark:text-white/60">
-                            Free and Open-Source Tailwind CSS Admin Dashboard Template
+                            {{ __('Free and Open-Source Tailwind CSS Admin Dashboard Template') }}
                         </p>
                     </div>
                 </div>

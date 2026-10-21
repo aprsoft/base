@@ -8,12 +8,12 @@
                 <a href="{{ route('settings.profile.edit') }}"
                    :class="active === 'profile' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700/50'"
                    class="flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium transition-colors">
-                    Profile
+                    {{ __('Profile') }}
                 </a>
                 <a href="{{ route('settings.password.edit') }}"
                    :class="active === 'password' ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700/50'"
                    class="flex items-center gap-3 rounded-md px-4 py-3 text-sm font-medium transition-colors">
-                    Password
+                    {{ __('Password') }}
                 </a>
             </nav>
         </div>

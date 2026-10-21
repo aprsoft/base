@@ -1,21 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-common.page-breadcrumb pageTitle="Password">
+    <x-common.page-breadcrumb :pageTitle="__('Password')">
         <x-slot:breadcrumbs>
             <li>
-                <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-500">Dashboard</a>
+                <a href="{{ route('dashboard') }}" class="text-gray-700 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-500">{{ __('Dashboard') }}</a>
             </li>
             <li>
-                <span class="text-gray-700 dark:text-gray-400">Password</span>
+                <span class="text-gray-700 dark:text-gray-400">{{ __('Password') }}</span>
             </li>
         </x-slot:breadcrumbs>
     </x-common.page-breadcrumb>
 
-    <x-layouts.settings title="Password" description="Update your password to keep your account secure">
+    <x-layouts.settings :title="__('Password')" :description="__('Update your password to keep your account secure')">
         @if (session('status') === 'password-updated')
             <div class="mb-6">
-                <x-ui.alert variant="success" message="Password updated successfully" />
+                <x-ui.alert variant="success" :message="__('Password updated successfully')" />
             </div>
         @endif
 
@@ -26,14 +26,14 @@
             <!-- Current Password Input -->
             <div>
                 <label for="current_password" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    Current Password
+                    {{ __('Current Password') }}
                 </label>
                 <div x-data="{ showPassword: false }" class="relative">
                     <input
                         :type="showPassword ? 'text' : 'password'"
                         id="current_password"
                         name="current_password"
-                        placeholder="Enter your current password"
+                        placeholder="{{ __('Enter your current password') }}"
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 pl-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                         required
                     />
@@ -60,14 +60,14 @@
             <!-- New Password Input -->
             <div>
                 <label for="password" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    New Password
+                    {{ __('New Password') }}
                 </label>
                 <div x-data="{ showPassword: false }" class="relative">
                     <input
                         :type="showPassword ? 'text' : 'password'"
                         id="password"
                         name="password"
-                        placeholder="Enter your new password"
+                        placeholder="{{ __('Enter your new password') }}"
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 pl-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                         required
                     />
@@ -94,14 +94,14 @@
             <!-- Confirm Password Input -->
             <div>
                 <label for="password_confirmation" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                    Confirm Password
+                    {{ __('Confirm Password') }}
                 </label>
                 <div x-data="{ showPassword: false }" class="relative">
                     <input
                         :type="showPassword ? 'text' : 'password'"
                         id="password_confirmation"
                         name="password_confirmation"
-                        placeholder="Confirm your new password"
+                        placeholder="{{ __('Confirm your new password') }}"
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 pl-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                         required
                     />
@@ -125,7 +125,7 @@
             <!-- Update Button -->
             <div>
                 <x-ui.button type="submit" variant="primary">
-                    Update password
+                    {{ __('Update password') }}
                 </x-ui.button>
             </div>
         </form>
