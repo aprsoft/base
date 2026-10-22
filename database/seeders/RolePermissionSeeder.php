@@ -24,22 +24,22 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         Permission::create([
-            'name' => 'central.users.index',
+            'name' => 'users.index',
             'guard_name' => 'web',
         ])->syncRoles($role1, $role2);
 
         Permission::create([
-            'name' => 'central.users.create',
+            'name' => 'users.create',
             'guard_name' => 'web',
         ])->syncRoles($role1, $role2);
 
         Permission::create([
-            'name' => 'central.users.edit',
+            'name' => 'users.edit',
             'guard_name' => 'web',
         ])->syncRoles($role1);
 
         Permission::create([
-            'name' => 'central.users.destroy',
+            'name' => 'users.destroy',
             'guard_name' => 'web',
         ])->syncRoles($role1);
 

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +25,46 @@ Route::middleware(['auth'])->group(function () {
         Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
         Route::get('users/{user}/edit', [UserController::class, 'edit'])->withTrashed()->name('users.edit');
         
+
+    /*
+    |--------------------------------------------------------------------------
+    | Roles
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('roles', [RoleController::class, 'index'])
+        ->name('roles.index');
+
+    Route::get('roles/create', [RoleController::class, 'create'])
+        ->name('roles.create');
+
+    Route::get('roles/{role}/edit', [RoleController::class, 'edit'])
+        ->name('roles.edit');           
+    
+    
+    Route::get('roles/{role}', [RoleController::class, 'show'])
+        ->name('roles.show');        
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Permissions
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('permissions', [PermissionController::class, 'index'])
+        ->name('permissions.index');
+
+    Route::get('permissions/create', [PermissionController::class, 'create'])
+        ->name('permissions.create');
+
+    Route::get('permissions/{permission}/edit', [PermissionController::class, 'edit'])
+        ->name('permissions.edit');
+
+    Route::get('permissions/{permission}', [PermissionController::class, 'show'])
+        ->name('permissions.show');
+
 });
 
 require __DIR__.'/auth.php';
