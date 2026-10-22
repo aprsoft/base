@@ -28,6 +28,14 @@ class UserController extends Controller
    
     public function edit(User $user)
     {
+        abort_unless(auth('web')->user()?->can('users.edit'), 403);
+        abort_if((int) $user->id === 1, 403);
+        abort_if($user->trashed(), 404);
+
+        if ($user->hasRole('SuperAdmin', 'web')) {
+            abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+        }
+
         return view('users.edit', compact('user'));
     }
 

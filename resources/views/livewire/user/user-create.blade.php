@@ -1,5 +1,5 @@
 
-<x-form wire:submit="save">
+<x-form wire:submit="confirmSave">
 
     {{-- Error general de creación --}}
     @error('form')
@@ -75,7 +75,7 @@
 
                                 <button
                                     type="button"
-                                    wire:click="removeRole({{ $role->id }})"
+                                    wire:click="confirmRemoveRole({{ $role->id }})"
                                     aria-label="Quitar rol {{ $role->name }}"
                                     class="text-gray-400 transition hover:text-red-500"
                                 >
@@ -165,7 +165,7 @@
             label="Guardar usuario"
             class="btn-primary"
             type="submit"
-            spinner="save"
+            spinner="confirmSave"
         />
 
     </x-slot:actions>

@@ -92,16 +92,66 @@ class UserCreate extends Component
         'roleIds.*.distinct' => 'No puedes seleccionar un rol más de una vez.',
     ];
 
+    public function confirmSave(): void
+    {
+        abort_unless(auth('web')->user()?->can('users.create'), 403);
+
+        $this->name = trim($this->name);
+        $this->email = Str::lower(trim($this->email));
+        $this->validate();
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: 0,
+            name: $this->name,
+            confirmEvent: 'user-create-save-confirmed',
+            title: 'Crear usuario',
+            message: '¿Confirmas que deseas crear el usuario y asignarle los roles seleccionados?',
+            warning: 'Se solicitará un enlace al correo indicado para establecer su contraseña.',
+            confirmLabel: 'Sí, crear'
+        );
+    }
+
+    public function confirmRemoveRole(int $roleId): void
+    {
+        abort_unless(auth('web')->user()?->can('users.create'), 403);
+
+        $role = $this->assignableRoles()->firstWhere('id', $roleId);
+        if (! $role || ! in_array($roleId, array_map('intval', $this->roleIds), true)) {
+            return;
+        }
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $roleId,
+            name: $role->name,
+            confirmEvent: 'user-create-remove-role-confirmed',
+            title: 'Quitar rol',
+            message: '¿Confirmas que deseas quitar este rol de la selección?',
+            warning: 'El usuario todavía no ha sido creado.',
+            confirmLabel: 'Sí, quitar'
+        );
+    }
+
+    #[\Livewire\Attributes\On('user-create-remove-role-confirmed')]
     public function removeRole(int $roleId): void
     {
+        abort_unless(auth('web')->user()?->can('users.create'), 403);
+
+        if (! $this->assignableRoles()->contains('id', $roleId)) {
+            return;
+        }
+
         $this->roleIds = array_values(array_filter(
             $this->roleIds,
             fn ($id) => (int) $id !== $roleId
         ));
     }
 
-    public function save(ErrorLogger $errorLogger)
+    #[\Livewire\Attributes\On('user-create-save-confirmed')]
+    public function save(int $id, ErrorLogger $errorLogger)
     {
+        abort_unless($id === 0, 403);
         abort_unless(
             auth('web')->user()?->can('users.create'),
             403
