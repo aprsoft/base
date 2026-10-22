@@ -14,11 +14,12 @@
 
         <div class="flex flex-wrap items-center gap-2">
             <x-button label="Volver a usuarios" icon="o-arrow-left"
-                      :link="route('users.index')" class="btn-ghost" />
+                      :link="route('users.index')"  no-wire-navigate class="btn-ghost" />
 
             @if (auth('web')->user()?->can('users.edit') && ! $user->trashed())
                 <x-button label="Editar usuario" icon="o-pencil-square"
                           :link="route('users.edit', ['user' => $user->id])"
+                          no-wire-navigate
                           class="btn-primary" />
             @endif
         </div>
