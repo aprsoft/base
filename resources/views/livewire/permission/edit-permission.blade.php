@@ -46,7 +46,7 @@
         <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
 
             <a
-                href="{{ route('central.permissions.index') }}"
+                href="{{ route('permissions.index') }}"
                 class="inline-flex items-center justify-center rounded-lg
                        border border-gray-300 bg-white px-4 py-2.5
                        text-sm font-medium text-gray-700 shadow-sm
