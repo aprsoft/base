@@ -36,12 +36,12 @@ class RolePermissionSeeder extends Seeder
         Permission::create([
             'name' => 'users.edit',
             'guard_name' => 'web',
-        ])->syncRoles($role1);
+        ])->syncRoles($role1, $role2);
 
         Permission::create([
             'name' => 'users.destroy',
             'guard_name' => 'web',
-        ])->syncRoles($role1);
+        ])->syncRoles($role1, $role2);
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
