@@ -1,0 +1,18 @@
+composer require robsontenorio/mary
+
+npm install -D daisyui@^5.5.19 
+(o ver la version actualizada)
+
+
+Agregar a app.css
+--------------------
+
+
+/* DaisyUI 5 */
+@plugin "daisyui" {
+    themes: light --default, dark --prefersdark;
+}
+
+
+/* MaryUI 2 */
+@source "../../vendor/robsontenorio/mary/src/View/Components/**/*.php";

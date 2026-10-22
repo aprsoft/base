@@ -3,9 +3,21 @@
 @import "tailwindcss";
 @import '../../vendor/power-components/livewire-powergrid/resources/css/tailwind4.css';
 
+
+/** enable dark mode */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* PowerGrid v.6 */
 @import 'flatpickr/dist/flatpickr.min.css';
 
+/* DaisyUI 5 */
+@plugin "daisyui" {
+    themes: light --default, dark --prefersdark;
+}
 
+
+/* MaryUI 2 */
+@source "../../vendor/robsontenorio/mary/src/View/Components/**/*.php";
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -19,6 +31,8 @@
 @source '../../vendor/power-components/livewire-powergrid/src/Themes/Tailwind.php';
 @source '../../vendor/power-components/livewire-powergrid/resources/views/**/*.php';
 
+
+@source "../../vendor/robsontenorio/mary/src/View/Components/**/*.php";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -897,3 +911,5 @@ pre[class*='language-'] {
         fill: none !important;
     }
 }
+
+
