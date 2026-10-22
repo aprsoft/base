@@ -1,86 +1,73 @@
 
 @php
-    // Canal privado del usuario autenticado.
-    // Debe coincidir con el canal definido en el backend.
+    $alertTypes = ['success', 'error', 'warning', 'info'];
+
+    // Canal de notificaciones existente.
     $realtimeChannel = auth('web')->check()
         ? 'users.' . auth('web')->id()
         : null;
 @endphp
 
 <div
+    class="space-y-3"
     x-data="{
-        realtimeType: null,
-        realtimeMessage: null,
-        realtimeTimer: null,
+        type: null,
+        message: '',
+        timer: null,
 
-        showRealtime(type, message) {
+        show(type, message) {
             if (
-                ! ['success', 'error'].includes(type)
-                || ! message
+                ! ['success', 'error', 'warning', 'info'].includes(type)
+                || typeof message !== 'string'
+                || ! message.trim()
             ) {
                 return;
             }
 
-            this.realtimeType = type;
-            this.realtimeMessage = message;
+            clearTimeout(this.timer);
 
-            clearTimeout(this.realtimeTimer);
+            this.type = type;
+            this.message = message;
 
-            const timeout = type === 'error' ? 8000 : 7000;
+            const duration = type === 'error' ? 8000 : 7000;
 
-            this.realtimeTimer = setTimeout(() => {
-                this.realtimeType = null;
-                this.realtimeMessage = null;
-            }, timeout);
+            this.timer = setTimeout(() => {
+                this.type = null;
+                this.message = '';
+            }, duration);
         }
     }"
-
-    x-on:app-job-notification.window="
-        showRealtime(
-            $event.detail.type,
-            $event.detail.message
-        )
+    x-on:app-alert.window="
+        show($event.detail.type, $event.detail.message)
     "
-
-    class="space-y-3"
+    x-on:app-job-notification.window="
+        show($event.detail.type, $event.detail.message)
+    "
 >
-    {{-- Mensaje de éxito --}}
-    @if (session('success'))
-        <div
-            x-data="{ visible: true }"
-            x-init="setTimeout(() => visible = false, 5000)"
-            x-show="visible"
-            x-transition
-        >
-            <x-ui.alert variant="success">
-                {{ session('success') }}
-            </x-ui.alert>
-        </div>
-    @endif
+    {{-- Alertas de sesión: redirecciones Laravel --}}
 
-    {{-- Notificación realtime de éxito --}}
-    <div
-        x-show="realtimeMessage && realtimeType === 'success'"
-        x-transition
-        style="display: none;"
-    >
-        <x-ui.alert variant="success">
-            <span x-text="realtimeMessage"></span>
-        </x-ui.alert>
-    </div>
+    @foreach ($alertTypes as $alertType)
+        @if (session()->has($alertType))
+            <div
+                x-data="{ visible: true }"
+                x-init="
+                    setTimeout(
+                        () => visible = false,
+                        {{ $alertType === 'error' ? 8000 : 5000 }}
+                    )
+                "
+                x-show="visible"
+                x-transition
+            >
+                <x-ui.alert :variant="$alertType">
+                    {{ session($alertType) }}
+                </x-ui.alert>
+            </div>
+        @endif
+    @endforeach
 
-    {{-- Notificación realtime de error --}}
-    <div
-        x-show="realtimeMessage && realtimeType === 'error'"
-        x-transition
-        style="display: none;"
-    >
-        <x-ui.alert variant="error">
-            <span x-text="realtimeMessage"></span>
-        </x-ui.alert>
-    </div>
+    {{-- Errores de validación de solicitudes HTTP --}}
 
-    {{-- Errores de validación --}}
     @if ($errors->any())
         <x-ui.alert variant="error">
             <ul class="list-disc space-y-1 pl-5">
@@ -91,22 +78,24 @@
         </x-ui.alert>
     @endif
 
-    {{-- Mensaje de error general --}}
-    @if (session('error'))
+    {{-- Alertas inmediatas Livewire y Echo --}}
+
+    @foreach ($alertTypes as $alertType)
         <div
-            x-data="{ visible: true }"
-            x-init="setTimeout(() => visible = false, 8000)"
-            x-show="visible"
+            x-show="message && type === '{{ $alertType }}'"
             x-transition
+            x-cloak
+            style="display: none;"
         >
-            <x-ui.alert variant="error">
-                {{ session('error') }}
+            <x-ui.alert :variant="$alertType">
+                <span x-text="message"></span>
             </x-ui.alert>
         </div>
-    @endif
+    @endforeach
 </div>
 
-{{-- Escuchar eventos en tiempo real --}}
+{{-- Notificaciones existentes de Laravel Echo --}}
+
 @if ($realtimeChannel)
     <script>
         document.addEventListener('DOMContentLoaded', () => {

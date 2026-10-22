@@ -21,6 +21,9 @@ class UserEdit extends Component
 
     public string $email = '';
 
+    /**
+     * Inicializar los datos del usuario.
+     */
     public function mount(User $user): void
     {
         $this->userId = $user->id;
@@ -29,19 +32,14 @@ class UserEdit extends Component
     }
 
     /**
-     * Actualizar los datos del usuario.
-     *
-     * Si cambia el correo electrónico, se solicita
-     * obligatoriamente un enlace de restablecimiento.
+     * Normalizar y validar los datos.
      */
-    public function save(): void
+    private function validatedData(User $user): array
     {
-        $user = User::findOrFail($this->userId);
-
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));
 
-        $validated = $this->validate([
+        return $this->validate([
             'name' => [
                 'required',
                 'string',
@@ -55,58 +53,130 @@ class UserEdit extends Component
                     ->ignore($user->id),
             ],
         ]);
+    }
+
+    /**
+     * Validar y abrir el modal de confirmación.
+     */
+    public function confirmSave(): void
+    {
+        $user = User::findOrFail($this->userId);
+
+        $validated = $this->validatedData($user);
 
         $user->fill($validated);
 
-        $emailChanged = $user->isDirty('email');
-
-        if ($emailChanged) {
-            // El nuevo correo aún no está verificado.
-            $user->email_verified_at = null;
-        }
-
         if (! $user->isDirty()) {
-            session()->flash(
-                'success',
+            $this->alert(
+                'info',
                 'No hay cambios para guardar.'
             );
 
             return;
         }
 
-        $user->save();
+        $emailChanged = $user->isDirty('email');
 
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $user->id,
+            name: $user->name,
+            confirmEvent: 'user-edit-save-confirmed',
+            title: 'Guardar cambios',
+            message: '¿Confirmas que deseas guardar los cambios del usuario?',
+            warning: $emailChanged
+                ? 'Se modificará el correo electrónico y se solicitará un enlace de restablecimiento de contraseña al nuevo correo.'
+                : '',
+            confirmLabel: 'Sí, guardar'
+        );
+    }
+
+    /**
+     * Guardar después de confirmar.
+     */
+    #[On('user-edit-save-confirmed')]
+    public function save(int $id): void
+    {
+        abort_unless($id === $this->userId, 403);
+
+        $user = User::findOrFail($this->userId);
+
+        // Volver a validar antes de guardar.
+        $validated = $this->validatedData($user);
+
+        $user->fill($validated);
+
+        $emailChanged = $user->isDirty('email');
+
+        if ($emailChanged) {
+            $user->email_verified_at = null;
+        }
+
+        if (! $user->isDirty()) {
+            $this->alert(
+                'info',
+                'No hay cambios para guardar.'
+            );
+
+            return;
+        }
+
+        try {
+            $user->save();
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $this->alert(
+                'error',
+                'Ocurrió un error al actualizar el usuario.'
+            );
+
+            return;
+        }
+
+        // Actualización sin cambio de correo.
         if (! $emailChanged) {
             session()->flash(
                 'success',
                 'Usuario actualizado correctamente.'
             );
 
+            $this->redirectRoute('users.index');
+
             return;
         }
 
-        // El correo cambió: solicitar obligatoriamente
-        // el enlace para la nueva dirección.
+        // Cambio de correo: solicitar obligatoriamente
+        // el enlace de restablecimiento al nuevo correo.
         $status = $this->sendResetLink($user);
 
         if ($status === Password::RESET_LINK_SENT) {
             session()->flash(
                 'success',
-                'Correo actualizado correctamente. Se solicitó el envío de un enlace para restablecer la contraseña al nuevo correo electrónico.'
+                'Correo actualizado correctamente. Se solicitó el envío de un enlace para restablecer la contraseña.'
             );
+
+            $this->redirectRoute('users.index');
 
             return;
         }
 
-        session()->flash(
-            'warning',
-            'El correo fue actualizado, pero no se pudo confirmar el envío del enlace para restablecer la contraseña. Puedes reenviarlo desde esta pantalla.'
+        $message = $status === Password::RESET_THROTTLED
+            ? 'El correo fue actualizado, pero existe una solicitud reciente de restablecimiento. Intenta nuevamente más tarde.'
+            : 'El correo fue actualizado, pero no se pudo confirmar el envío del enlace. Puedes solicitarlo nuevamente desde esta pantalla.';
+
+        session()->flash('warning', $message);
+
+        // Permanecer en edición para permitir
+        // solicitar otro enlace posteriormente.
+        $this->redirectRoute(
+            'users.edit',
+            ['user' => $user->id]
         );
     }
 
     /**
-     * Abrir modal de confirmación para enviar
-     * un enlace de restablecimiento.
+     * Confirmación del envío manual del enlace.
      */
     public function confirmResetPassword(): void
     {
@@ -119,19 +189,17 @@ class UserEdit extends Component
             confirmEvent: 'user-edit-reset-password-confirmed',
             title: 'Restablecer contraseña',
             message: '¿Deseas enviar un enlace para restablecer la contraseña de este usuario?',
-            warning: 'Se solicitará el envío de un correo con un enlace seguro.',
+            warning: 'Se utilizará el correo electrónico actualmente registrado.',
             confirmLabel: 'Enviar enlace'
         );
     }
 
     /**
-     * Enviar el enlace después de la confirmación.
+     * Envío manual del enlace.
      */
     #[On('user-edit-reset-password-confirmed')]
     public function resetPassword(int $id): void
     {
-        // Impedir utilizar el evento para cambiar
-        // el usuario seleccionado.
         abort_unless($id === $this->userId, 403);
 
         $user = User::findOrFail($this->userId);
@@ -139,7 +207,7 @@ class UserEdit extends Component
         $status = $this->sendResetLink($user);
 
         if ($status === Password::RESET_LINK_SENT) {
-            session()->flash(
+            $this->alert(
                 'success',
                 'Se solicitó el envío del enlace para restablecer la contraseña.'
             );
@@ -148,7 +216,7 @@ class UserEdit extends Component
         }
 
         if ($status === Password::RESET_THROTTLED) {
-            session()->flash(
+            $this->alert(
                 'warning',
                 'Ya existe una solicitud reciente. Intenta nuevamente más tarde.'
             );
@@ -156,14 +224,14 @@ class UserEdit extends Component
             return;
         }
 
-        session()->flash(
-            'warning',
-            'No fue posible confirmar el envío del enlace de restablecimiento.'
+        $this->alert(
+            'error',
+            'No fue posible procesar el envío del enlace de restablecimiento.'
         );
     }
 
     /**
-     * Enviar enlace al correo actual del usuario.
+     * Enviar el enlace de contraseña.
      */
     private function sendResetLink(User $user): ?string
     {
@@ -176,6 +244,20 @@ class UserEdit extends Component
 
             return null;
         }
+    }
+
+    /**
+     * Enviar notificación al partial global.
+     */
+    private function alert(
+        string $type,
+        string $message
+    ): void {
+        $this->dispatch(
+            'app-alert',
+            type: $type,
+            message: $message
+        );
     }
 
     public function render(): View

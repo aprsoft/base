@@ -1,29 +1,15 @@
 
 <div class="space-y-6">
 
-    {{-- Mensajes --}}
-
-    {{-- @if (session('success'))
-        <x-ui.alert
-            variant="success"
-            :message="session('success')"
-        />
-    @endif
-
-    @if (session('warning'))
-        <x-ui.alert
-            variant="warning"
-            :message="session('warning')"
-        />
-    @endif --}}
-
     {{-- Datos del usuario --}}
 
-    <div class="rounded-xl border border-gray-200
-                bg-white p-6 dark:border-gray-800
-                dark:bg-gray-900">
+    <div
+        class="rounded-xl border border-gray-200 bg-white p-6
+               dark:border-gray-800 dark:bg-gray-900"
+    >
+        <form wire:submit="confirmSave" class="space-y-6">
 
-        <form wire:submit="save" class="space-y-6">
+            {{-- Nombre --}}
 
             <div>
                 <label
@@ -40,13 +26,14 @@
                     wire:model="name"
                     autocomplete="name"
                     maxlength="255"
-                    required
+               
                     class="h-11 w-full rounded-lg border
                            border-gray-300 bg-transparent
                            px-4 text-sm text-gray-800
                            focus:border-brand-300
                            focus:outline-none
-                           dark:border-gray-700 dark:text-white"
+                           dark:border-gray-700
+                           dark:text-white"
                 />
 
                 @error('name')
@@ -55,6 +42,8 @@
                     </p>
                 @enderror
             </div>
+
+            {{-- Correo electrónico --}}
 
             <div>
                 <label
@@ -71,13 +60,14 @@
                     wire:model="email"
                     autocomplete="email"
                     maxlength="255"
-                    required
+                   
                     class="h-11 w-full rounded-lg border
                            border-gray-300 bg-transparent
                            px-4 text-sm text-gray-800
                            focus:border-brand-300
                            focus:outline-none
-                           dark:border-gray-700 dark:text-white"
+                           dark:border-gray-700
+                           dark:text-white"
                 />
 
                 @error('email')
@@ -87,16 +77,15 @@
                 @enderror
             </div>
 
-            {{-- Guardar --}}
+            {{-- Guardar con confirmación --}}
 
             <div class="flex justify-end">
                 <button
                     type="submit"
                     wire:loading.attr="disabled"
-                    wire:target="save"
-                    class="inline-flex min-w-40 items-center
-                           justify-center rounded-lg
-                           bg-brand-500 px-4 py-2.5
+                    wire:target="confirmSave,save"
+                    class="inline-flex min-w-40 items-center justify-center
+                           rounded-lg bg-brand-500 px-4 py-2.5
                            text-sm font-medium text-white
                            shadow-theme-xs transition
                            hover:bg-brand-600
@@ -105,21 +94,21 @@
                 >
                     <span
                         wire:loading.remove
-                        wire:target="save"
+                        wire:target="confirmSave,save"
                     >
                         Guardar cambios
                     </span>
 
                     <span
                         wire:loading.inline-flex
-                        wire:target="save"
+                        wire:target="confirmSave,save"
                         class="items-center gap-2"
                     >
                         <svg
                             class="h-4 w-4 animate-spin"
                             xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
                             viewBox="0 0 24 24"
+                            fill="none"
                             aria-hidden="true"
                         >
                             <circle
@@ -137,7 +126,7 @@
                             ></path>
                         </svg>
 
-                        Guardando cambios...
+                        Procesando...
                     </span>
                 </button>
             </div>
@@ -145,19 +134,23 @@
         </form>
     </div>
 
-    {{-- Restablecimiento de contraseña --}}
+    {{-- Seguridad de la cuenta --}}
 
-    <div class="rounded-xl border border-gray-200
-                bg-white p-6 dark:border-gray-800
-                dark:bg-gray-900">
-
-        <h3 class="mb-2 text-lg font-semibold
-                   text-gray-800 dark:text-white">
+    <div
+        class="rounded-xl border border-gray-200 bg-white p-6
+               dark:border-gray-800 dark:bg-gray-900"
+    >
+        <h3
+            class="mb-2 text-lg font-semibold
+                   text-gray-800 dark:text-white"
+        >
             Restablecer contraseña
         </h3>
 
-        <p class="mb-5 text-sm text-gray-500
-                  dark:text-gray-400">
+        <p
+            class="mb-5 text-sm text-gray-500
+                   dark:text-gray-400"
+        >
             Se enviará un enlace al correo electrónico
             registrado para que el usuario pueda
             establecer una nueva contraseña.
@@ -172,12 +165,13 @@
                    rounded-lg border border-gray-300
                    bg-white px-4 py-2.5
                    text-sm font-medium text-gray-700
-                   shadow-theme-xs transition
-                   hover:bg-gray-50
+                   transition hover:bg-gray-50
                    disabled:cursor-not-allowed
                    disabled:opacity-60
-                   dark:border-gray-700 dark:bg-gray-800
-                   dark:text-gray-200 dark:hover:bg-gray-700"
+                   dark:border-gray-700
+                   dark:bg-gray-800
+                   dark:text-gray-200
+                   dark:hover:bg-gray-700"
         >
             <span
                 wire:loading.remove
@@ -194,6 +188,6 @@
                 Procesando...
             </span>
         </button>
-
     </div>
+
 </div>
