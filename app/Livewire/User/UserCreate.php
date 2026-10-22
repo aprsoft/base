@@ -22,14 +22,7 @@ class UserCreate extends Component
     public string $name = '';
     public string $email = '';
     public array $roleIds = [];
-
-    public function mount(): void
-    {
-        abort_unless(
-            auth('web')->user()?->can('users.create'),
-            403
-        );
-    }
+   
 
     // Obtiene todos los roles que existen en la BD
     private function assignableRoles(): Collection
@@ -93,8 +86,7 @@ class UserCreate extends Component
     ];
 
     public function confirmSave(): void
-    {
-        abort_unless(auth('web')->user()?->can('users.create'), 403);
+    {       
 
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));
@@ -113,8 +105,7 @@ class UserCreate extends Component
     }
 
     public function confirmRemoveRole(int $roleId): void
-    {
-        abort_unless(auth('web')->user()?->can('users.create'), 403);
+    {        
 
         $role = $this->assignableRoles()->firstWhere('id', $roleId);
         if (! $role || ! in_array($roleId, array_map('intval', $this->roleIds), true)) {
@@ -136,7 +127,7 @@ class UserCreate extends Component
     #[\Livewire\Attributes\On('user-create-remove-role-confirmed')]
     public function removeRole(int $roleId): void
     {
-        abort_unless(auth('web')->user()?->can('users.create'), 403);
+      
 
         if (! $this->assignableRoles()->contains('id', $roleId)) {
             return;
@@ -150,12 +141,7 @@ class UserCreate extends Component
 
     #[\Livewire\Attributes\On('user-create-save-confirmed')]
     public function save(int $id, ErrorLogger $errorLogger)
-    {
-        abort_unless($id === 0, 403);
-        abort_unless(
-            auth('web')->user()?->can('users.create'),
-            403
-        );
+    {      
 
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));

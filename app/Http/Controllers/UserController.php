@@ -10,18 +10,28 @@ class UserController extends Controller
   
     public function index()
     {        
+        abort_unless(auth('web')->user()?->can('users.index'), 403);
+        abort_if((int) $user->id === 1, 403);
+        abort_if($user->trashed(), 404);
 
         return view('users.index', ['title'=> 'Usuarios']);
     }
 
     public function show(User $user)
     {
+        abort_unless(auth('web')->user()?->can('users.show'), 403);
+        abort_if((int) $user->id === 1, 403);
+        abort_if($user->trashed(), 404);
         
         return view('users.show',['title'=>'Mostrar Usuario','user'=> $user]);
     }
 
     public function create()
     {
+        abort_unless(auth('web')->user()?->can('users.create'), 403);
+        abort_if((int) $user->id === 1, 403);
+        abort_if($user->trashed(), 404);
+
         return view('users.create',['title'=>'Crear Usuario']);
     }
 
@@ -40,10 +50,4 @@ class UserController extends Controller
     }
 
    
-    public function update(UpdateUserRequest $request, User $user)
-    {
-        $user->update($request->validated());
-
-        return redirect()->route('users.index')->with('success', 'User updated successfully');
-    }
 }
