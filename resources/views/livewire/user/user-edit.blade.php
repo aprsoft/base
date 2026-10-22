@@ -64,22 +64,30 @@
                         icon="o-envelope"
                     />
 
-                    {{-- Aviso de cambio de correo --}}
+                    {{-- Aviso de cambio de correo: fondo celeste --}}
                     <div class="flex items-start gap-2 rounded-lg
-                                border border-info/20 bg-info/10 p-3">
+                                border border-blue-light-200
+                                bg-blue-light-100 p-3
+                                dark:border-blue-light-800
+                                dark:bg-blue-light-950/70">
 
                         <x-icon
                             name="o-information-circle"
-                            class="mt-0.5 size-5 shrink-0 text-info"
+                            class="mt-0.5 size-5 shrink-0
+                                   text-blue-light-700
+                                   dark:text-blue-light-300"
                         />
 
                         <div class="space-y-1">
 
-                            <p class="text-sm font-semibold text-base-content">
+                            <p class="text-sm font-semibold
+                                      text-gray-900 dark:text-white">
                                 Cambio de correo electrónico
                             </p>
 
-                            <p class="text-xs leading-5 text-base-content/70">
+                            <p class="text-xs leading-5
+                                      text-gray-700
+                                      dark:text-blue-light-100">
                                 Si modificas el correo electrónico y guardas
                                 los cambios, se solicitará automáticamente
                                 el envío de un nuevo enlace a la dirección
@@ -87,7 +95,9 @@
                                 establecer una nueva contraseña.
                             </p>
 
-                            <p class="text-xs font-medium text-info">
+                            <p class="text-xs font-semibold
+                                      text-blue-light-700
+                                      dark:text-blue-light-300">
                                 Vigencia del enlace: 60 minutos.
                             </p>
 
@@ -115,13 +125,22 @@
                             los cambios.
                         </p>
 
+                        {{-- Botón gris con texto e icono blancos --}}
                         <x-button
                             label="Enviar enlace de contraseña"
                             icon="o-envelope"
                             type="button"
                             wire:click="confirmResetPassword"
                             spinner="confirmResetPassword"
-                            class="btn-outline btn-sm"
+                            class="btn-sm
+                                   !border-gray-600
+                                   !bg-gray-600
+                                   !text-white
+                                   hover:!border-gray-700
+                                   hover:!bg-gray-700
+                                   dark:!border-gray-600
+                                   dark:!bg-gray-600
+                                   dark:hover:!bg-gray-500"
                         />
 
                     </div>
