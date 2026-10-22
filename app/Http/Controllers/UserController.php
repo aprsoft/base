@@ -18,11 +18,14 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        abort_unless(auth('web')->user()?->can('users.show'), 403);
+        abort_unless(auth('web')->user()?->can('users.index'), 403);
         abort_if((int) $user->id === 1, 403);
-        abort_if($user->trashed(), 404);
-        
-        return view('users.show',['title'=>'Mostrar Usuario','user'=> $user]);
+
+        if ($user->hasRole('SuperAdmin', 'web')) {
+            abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+        }
+
+        return view('users.show', ['title' => 'Mostrar usuario', 'user' => $user]);
     }
 
     public function create()
