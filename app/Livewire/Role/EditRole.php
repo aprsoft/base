@@ -98,7 +98,7 @@ class EditRole extends Component
 
         session()->flash('success', 'Rol actualizado correctamente.');
 
-        return redirect()->route('central.roles.index');
+        return redirect()->route('roles.index');
     }
 
     public function render()
