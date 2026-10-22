@@ -5,11 +5,18 @@ namespace App\Livewire\Role;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Livewire\Attributes\Locked;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class EditRole extends Component
 {
+    private function authorizeManagement(): void
+    {
+        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+    }
+
+    #[Locked]
     public int $roleId;
 
     public string $role = '';
@@ -18,6 +25,8 @@ class EditRole extends Component
 
     public function mount(int $roleId): void
     {
+        $this->authorizeManagement();
+
         $role = Role::query()
             ->where('guard_name', 'web')
             ->with([
@@ -38,6 +47,8 @@ class EditRole extends Component
 
     public function update()
     {
+        $this->authorizeManagement();
+
         $role = Role::query()
             ->where('guard_name', 'web')
             ->findOrFail($this->roleId);
@@ -103,6 +114,8 @@ class EditRole extends Component
 
     public function render()
     {
+        $this->authorizeManagement();
+
         $permissions = Permission::query()
             ->where('guard_name', 'web')
             ->orderBy('name')

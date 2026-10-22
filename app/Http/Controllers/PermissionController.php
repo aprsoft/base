@@ -7,8 +7,15 @@ use Spatie\Permission\Models\Permission;
 
 class PermissionController
 {
+    private function authorizeManagement(): void
+    {
+        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+    }
+
     public function index()
     {
+        $this->authorizeManagement();
+
         return view('permission.index', [
             'title' => 'Permisos',
         ]);
@@ -16,6 +23,8 @@ class PermissionController
  
     public function create()
     {
+        $this->authorizeManagement();
+
         return view('permission.create', [
             'title' => 'Crear Permiso',
         ]);
@@ -28,10 +37,14 @@ class PermissionController
 
     public function show(string $id)
     {
+        $this->authorizeManagement();
+
         $permission = Permission::query()
             ->where('guard_name', 'web')
             ->with([
-                'roles' => fn ($query) => $query->orderBy('name'),
+                'roles' => fn ($query) => $query
+                    ->where('guard_name', 'web')
+                    ->orderBy('name'),
             ])
             ->findOrFail($id);
 
@@ -43,6 +56,8 @@ class PermissionController
 
     public function edit(string $id)
     {
+        $this->authorizeManagement();
+
         $permission = Permission::query()
             ->where('guard_name', 'web')
             ->findOrFail($id);

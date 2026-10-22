@@ -1,180 +1,60 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-common.page-breadcrumb pageTitle="Ver Permiso" />
+    <x-common.page-breadcrumb pageTitle="Mostrar permiso" />
 
-    <div class="space-y-6">
-
-        {{-- Información del permiso --}}
-        <div
-            class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm
-                   dark:border-gray-800 dark:bg-white/[0.03]"
-        >
-            <div class="mb-6">
-                <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">
-                    Información del permiso
-                </h3>
-
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Detalle del permiso y roles asociados.
-                </p>
+    <div class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-xl font-semibold text-base-content">Detalle del permiso</h2>
+                <p class="text-sm text-base-content/60">Consulta el identificador y los roles asociados.</p>
             </div>
-
-            <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        ID
-                    </p>
-
-                    <p class="mt-1 text-sm font-semibold text-gray-800 dark:text-white/90">
-                        {{ $permission->id }}
-                    </p>
-                </div>
-
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Nombre
-                    </p>
-
-                    <p class="mt-1 text-sm font-semibold text-gray-800 dark:text-white/90">
-                        {{ $permission->name }}
-                    </p>
-                </div>
-
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Guard
-                    </p>
-
-                    <p class="mt-1 text-sm font-semibold text-gray-800 dark:text-white/90">
-                        {{ $permission->guard_name }}
-                    </p>
-                </div>
-
-                <div>
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Roles asociados
-                    </p>
-
-                    <p class="mt-1 text-sm font-semibold text-gray-800 dark:text-white/90">
-                        {{ $permission->roles->count() }}
-                    </p>
-                </div>
-
+            <div class="flex flex-wrap gap-2">
+                <x-button label="Volver" icon="o-arrow-left" :link="route('permissions.index')"
+                          no-wire-navigate class="btn-ghost btn-sm" />
+                <x-button label="Editar permiso" icon="o-pencil-square"
+                          :link="route('permissions.edit', ['permission' => $permission->id])"
+                          no-wire-navigate class="btn-primary btn-sm" />
             </div>
         </div>
 
-        {{-- Roles asociados --}}
-        <div
-            class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm
-                   dark:border-gray-800 dark:bg-white/[0.03]"
-        >
-            <div class="mb-5">
-                <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">
-                    Roles
-                </h3>
-
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Roles que actualmente tienen asignado este permiso.
-                </p>
-            </div>
-
-            @if ($permission->roles->isNotEmpty())
-
-                <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
-
-                    <div class="overflow-x-auto">
-
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-
-                            <thead class="bg-gray-50 dark:bg-gray-900/50">
-                                <tr>
-                                    <th
-                                        class="px-5 py-3 text-left text-xs font-medium uppercase
-                                               tracking-wider text-gray-500 dark:text-gray-400"
-                                    >
-                                        ID
-                                    </th>
-
-                                    <th
-                                        class="px-5 py-3 text-left text-xs font-medium uppercase
-                                               tracking-wider text-gray-500 dark:text-gray-400"
-                                    >
-                                        Rol
-                                    </th>
-                                </tr>
-                            </thead>
-
-                            <tbody
-                                class="divide-y divide-gray-200 bg-white
-                                       dark:divide-gray-800 dark:bg-transparent"
-                            >
-                                @foreach ($permission->roles as $role)
-                                    <tr>
-                                        <td
-                                            class="whitespace-nowrap px-5 py-4 text-sm
-                                                   text-gray-600 dark:text-gray-400"
-                                        >
-                                            {{ $role->id }}
-                                        </td>
-
-                                        <td
-                                            class="px-5 py-4 text-sm font-medium
-                                                   text-gray-800 dark:text-white/90"
-                                        >
-                                            {{ $role->name }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-
-                        </table>
-
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <x-card shadow class="!p-4">
+                <div class="mb-4 flex items-center gap-3">
+                    <div class="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                        <x-icon name="o-key" class="size-6 text-primary" />
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="break-all text-lg font-semibold text-base-content">{{ $permission->name }}</h3>
+                        <p class="text-xs text-base-content/60">Permiso #{{ $permission->id }}</p>
                     </div>
                 </div>
+                <dl class="divide-y divide-base-300">
+                    <div class="flex items-center justify-between gap-3 py-3">
+                        <dt class="text-sm text-base-content/60">Guard</dt>
+                        <dd><x-badge :value="$permission->guard_name" class="badge-neutral badge-soft" /></dd>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 py-3">
+                        <dt class="text-sm text-base-content/60">Roles asociados</dt>
+                        <dd><x-badge :value="$permission->roles->count()" class="badge-primary badge-soft" /></dd>
+                    </div>
+                </dl>
+            </x-card>
 
-            @else
-
-                <div
-                    class="rounded-xl border border-dashed border-gray-300
-                           bg-gray-50 px-5 py-8 text-center
-                           dark:border-gray-700 dark:bg-gray-900/40"
-                >
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Este permiso no está asociado a ningún rol.
+            <x-card title="Roles asociados" subtitle="Perfiles que reciben este permiso" separator shadow class="!p-4">
+                @if ($permission->roles->isEmpty())
+                    <p class="rounded-lg border border-dashed border-base-300 p-4 text-sm text-base-content/60">
+                        Este permiso no tiene roles asociados.
                     </p>
-                </div>
-
-            @endif
+                @else
+                    <div class="flex max-h-64 flex-wrap content-start gap-2 overflow-y-auto">
+                        @foreach ($permission->roles as $role)
+                            <x-badge :value="$role->name" icon="o-shield-check"
+                                     class="badge-primary badge-soft" />
+                        @endforeach
+                    </div>
+                @endif
+            </x-card>
         </div>
-
-        {{-- Acciones --}}
-        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
-            <a
-                href="{{ route('permissions.index') }}"
-                class="inline-flex items-center justify-center rounded-lg
-                       border border-gray-300 bg-white px-4 py-2.5
-                       text-sm font-medium text-gray-700 shadow-sm
-                       transition hover:bg-gray-50
-                       dark:border-gray-700 dark:bg-gray-800
-                       dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-                Volver
-            </a>
-
-            <a
-                href="{{ route('permissions.edit', $permission->id) }}"
-                class="inline-flex items-center justify-center rounded-lg
-                       bg-blue-600 px-4 py-2.5
-                       text-sm font-medium text-white shadow-sm
-                       transition hover:bg-blue-700"
-            >
-                Editar permiso
-            </a>
-
-        </div>
-
     </div>
 @endsection

@@ -10,12 +10,19 @@ use Spatie\Permission\Models\Role;
 
 class CreateRole extends Component
 {
+    private function authorizeManagement(): void
+    {
+        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+    }
+
     public string $role = '';
 
     public array $permissionIds = [];
 
     public function save()
     {
+        $this->authorizeManagement();
+
         $validated = $this->validate([
             'role' => [
                 'required',
@@ -75,6 +82,8 @@ class CreateRole extends Component
 
     public function render()
     {
+        $this->authorizeManagement();
+
         $permissions = Permission::query()
             ->where('guard_name', 'web')
             ->orderBy('name')

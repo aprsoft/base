@@ -9,17 +9,26 @@ use Illuminate\Database\QueryException;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
+use Livewire\Attributes\Locked;
 use Spatie\Permission\Models\Permission;
 use Throwable;
 
 class EditPermission extends Component
 {
+    private function authorizeManagement(): void
+    {
+        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+    }
+
+    #[Locked]
     public int $permissionId;
 
     public string $permission = '';
 
     public function mount(int $permissionId): void
     {
+        $this->authorizeManagement();
+
         $permission = Permission::query()
             ->where('guard_name', 'web')
             ->findOrFail($permissionId);
@@ -32,6 +41,8 @@ class EditPermission extends Component
         UpdatePermissionService $updatePermission,
         ErrorLogger $errorLogger
     ) {
+        $this->authorizeManagement();
+
         try {
             $this->permission = trim($this->permission);
 
@@ -68,7 +79,7 @@ class EditPermission extends Component
                 )
             );
 
-            return redirect()->route('central.permissions.index');
+            return redirect()->route('permissions.index');
         } catch (ValidationException $exception) {
             /*
              * Registramos el error de validación en error_logs,
@@ -101,7 +112,7 @@ class EditPermission extends Component
                 $exception->getMessage()
             );
 
-            return redirect()->route('central.permissions.index');
+            return redirect()->route('permissions.index');
         } catch (QueryException $exception) {
             $errorLogger->report(
                 $exception,
@@ -117,7 +128,7 @@ class EditPermission extends Component
                 'Ocurrió un error de base de datos al actualizar el permiso.'
             );
 
-            return redirect()->route('central.permissions.index');
+            return redirect()->route('permissions.index');
         } catch (Throwable $exception) {
             $errorLogger->report(
                 $exception,
@@ -133,12 +144,14 @@ class EditPermission extends Component
                 'Ocurrió un error inesperado al actualizar el permiso.'
             );
 
-            return redirect()->route('central.permissions.index');
+            return redirect()->route('permissions.index');
         }
     }
 
     public function render()
     {
+        $this->authorizeManagement();
+
         return view('livewire.permission.edit-permission');
     }
 }

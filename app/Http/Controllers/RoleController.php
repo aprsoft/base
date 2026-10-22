@@ -6,9 +6,16 @@ use Spatie\Permission\Models\Role;
 
 class RoleController
 {
+    private function authorizeManagement(): void
+    {
+        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+    }
+
     
     public function index()
     {
+        $this->authorizeManagement();
+
         return view('role.index', [
             'title' => 'Roles',
         ]);
@@ -16,6 +23,8 @@ class RoleController
  
     public function create()
     {
+        $this->authorizeManagement();
+
         return view('role.create', [
             'title' => 'Crear Rol',
         ]);
@@ -23,6 +32,8 @@ class RoleController
   
     public function show(string $id)
     {
+        $this->authorizeManagement();
+
         $role = Role::query()
             ->where('guard_name', 'web')
             ->with([
@@ -40,6 +51,8 @@ class RoleController
  
     public function edit(string $id)
     {
+        $this->authorizeManagement();
+
         $role = Role::query()
             ->where('guard_name', 'web')
             ->findOrFail($id);

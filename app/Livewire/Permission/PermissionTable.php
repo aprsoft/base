@@ -39,6 +39,8 @@ final class PermissionTable extends PowerGridComponent
 
     public function datasource(): Builder
     {
+        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+
         return Permission::query()
             ->where('guard_name', 'web');
     }
@@ -79,6 +81,8 @@ final class PermissionTable extends PowerGridComponent
         ErrorLogger $errorLogger,
         int $id
     ): void {
+        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+
         try {
             $permissionName = $deletePermission->delete($id);
 
@@ -133,7 +137,7 @@ final class PermissionTable extends PowerGridComponent
             );
         }
 
-        $this->redirectRoute('central.permissions.index');
+        $this->redirectRoute('permissions.index');
     }
 
     public function actions(Permission $row): array

@@ -43,7 +43,9 @@ final class RoleTable extends PowerGridComponent
 
     public function datasource(): Builder
     {
-        return Role::query();
+        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+
+        return Role::query()->where('guard_name', 'web');
     }
 
     public function relationSearch(): array

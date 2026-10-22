@@ -8,10 +8,17 @@ use Spatie\Permission\Models\Permission;
 
 class CreatePermission extends Component
 {
+    private function authorizeManagement(): void
+    {
+        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+    }
+
     public string $permission = '';
 
     public function save()
     {
+        $this->authorizeManagement();
+
         $permissionName = $this->createPermission();
 
         session()->flash(
@@ -22,11 +29,13 @@ class CreatePermission extends Component
             )
         );
 
-        return redirect()->route('central.permissions.index');
+        return redirect()->route('permissions.index');
     }
 
     public function saveAndCreateAnother()
     {
+        $this->authorizeManagement();
+
         $permissionName = $this->createPermission();
 
         session()->flash(
@@ -37,11 +46,13 @@ class CreatePermission extends Component
             )
         );
 
-        return redirect()->route('central.permissions.create');
+        return redirect()->route('permissions.create');
     }
 
     private function createPermission(): string
     {
+        $this->authorizeManagement();
+
         $this->permission = trim($this->permission);
 
         $validated = $this->validate([
@@ -71,6 +82,8 @@ class CreatePermission extends Component
 
     public function render()
     {
+        $this->authorizeManagement();
+
         return view(
             'livewire.permission.create-permission'
         );

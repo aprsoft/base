@@ -1,232 +1,96 @@
-<div class="space-y-6">
+<div class="space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h2 class="text-xl font-semibold text-base-content">Nuevo rol</h2>
+            <p class="text-sm text-base-content/60">Crea un perfil y selecciona sus permisos.</p>
+        </div>
+        <x-button label="Volver" icon="o-arrow-left" :link="route('roles.index')"
+                  no-wire-navigate class="btn-ghost btn-sm" />
+    </div>
 
-    <form wire:submit="save" class="space-y-6">
-
-        <div
-            class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm
-                   dark:border-gray-800 dark:bg-white/[0.03]"
-        >
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-
-                <div>
-                    <div class="mb-4">
-                        <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">
-                            Nuevo rol
-                        </h3>
-
-                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                            Ingresa el nombre que identificará al rol.
-                        </p>
-                    </div>
-
-                    <x-input
-                        label="Nombre del rol"
-                        wire:model="role"
-                        placeholder="Ej: Supervisor"
-                    />
-
-                    @error('role')
-                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">
-                            {{ $message }}
-                        </p>
-                    @enderror
+    <x-form wire:submit="save" class="!gap-4">
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <x-card shadow class="!p-4">
+                <div class="mb-4 flex items-center gap-2">
+                    <x-icon name="o-shield-check" class="size-5 text-primary" />
+                    <h3 class="font-semibold text-base-content">Datos del rol</h3>
                 </div>
+                <div class="space-y-3">
+                    <x-input label="Nombre del rol" wire:model="role"
+                             placeholder="Ej.: Supervisor" icon="o-identification" />
 
-                <div>
-                    <div class="mb-4 flex items-center justify-between">
-                        <div>
-                            <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">
-                                Permisos seleccionados
-                            </h3>
-
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                Los permisos marcados aparecerán aquí.
-                            </p>
-                        </div>
-
-                        <span
-                            class="inline-flex min-w-8 items-center justify-center rounded-full
-                                   bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700
-                                   dark:bg-gray-800 dark:text-gray-300"
-                        >
-                            {{ $selectedPermissions->count() }}
-                        </span>
+                    <div class="flex items-center justify-between border-t border-base-300 pt-3">
+                        <span class="text-xs font-medium text-base-content/60">Guard de autorización</span>
+                        <x-badge value="web" class="badge-neutral badge-soft" />
                     </div>
 
-                    <div
-                        class="min-h-32 rounded-xl border border-dashed border-gray-300
-                               bg-gray-50 p-4
-                               dark:border-gray-700 dark:bg-gray-900/40"
-                    >
-                        @if ($selectedPermissions->isNotEmpty())
-                            <div class="flex flex-wrap gap-2">
-                                @foreach ($selectedPermissions as $permission)
-                                    <span
-                                        wire:key="selected-permission-{{ $permission->id }}"
-                                        class="inline-flex items-center rounded-lg
-                                               bg-blue-50 px-3 py-1.5
-                                               text-sm font-medium text-blue-700
-                                               ring-1 ring-inset ring-blue-700/10
-                                               dark:bg-blue-500/10 dark:text-blue-400"
-                                    >
-                                        {{ $permission->name }}
-                                    </span>
-                                @endforeach
-                            </div>
+                    <div class="flex items-start gap-2 rounded-lg border border-blue-light-200 bg-blue-light-100 p-3
+                                dark:border-blue-light-800 dark:bg-blue-light-950/70">
+                        <x-icon name="o-information-circle" class="mt-0.5 size-5 shrink-0 text-blue-light-700 dark:text-blue-light-300" />
+                        <p class="text-xs leading-5 text-gray-700 dark:text-blue-light-100">
+                            Los permisos determinan las acciones autorizadas para quienes tengan este rol.
+                            Los cambios se aplicarán al guardar.
+                        </p>
+                    </div>
+
+                    <div class="border-t border-base-300 pt-3">
+                        <div class="mb-2 flex items-center justify-between gap-2">
+                            <span class="text-sm font-medium text-base-content">Permisos seleccionados</span>
+                            <x-badge :value="$selectedPermissions->count()" class="badge-primary badge-soft" />
+                        </div>
+                        @if ($selectedPermissions->isEmpty())
+                            <p class="text-xs text-base-content/60">Todavía no hay permisos seleccionados.</p>
                         @else
-                            <div
-                                class="flex min-h-24 items-center justify-center
-                                       text-center text-sm text-gray-500
-                                       dark:text-gray-400"
-                            >
-                                Aún no has seleccionado permisos.
+                            <div class="flex max-h-32 flex-wrap content-start gap-1.5 overflow-y-auto">
+                                @foreach ($selectedPermissions as $permission)
+                                    <x-badge wire:key="selected-permission-{{ $permission->id }}"
+                                             :value="$permission->name" class="badge-primary badge-soft" />
+                                @endforeach
                             </div>
                         @endif
                     </div>
-
-                    @error('permissionIds')
-                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">
-                            {{ $message }}
-                        </p>
-                    @enderror
                 </div>
+            </x-card>
 
-            </div>
-        </div>
-
-        <div
-            class="overflow-hidden rounded-2xl border border-gray-200
-                   bg-white shadow-sm
-                   dark:border-gray-800 dark:bg-white/[0.03]"
-        >
-            <div
-                class="flex items-center justify-between border-b border-gray-200
-                       px-5 py-4 dark:border-gray-800"
-            >
-                <div>
-                    <h3 class="text-base font-semibold text-gray-800 dark:text-white/90">
-                        Permisos
-                    </h3>
-
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Selecciona los permisos que tendrá este rol.
-                    </p>
+            <x-card shadow class="!p-4">
+                <div class="mb-3 flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <x-icon name="o-key" class="size-5 text-primary" />
+                        <h3 class="font-semibold text-base-content">Permisos disponibles</h3>
+                    </div>
+                    <x-badge :value="$permissions->count() . ' disponibles'" class="badge-neutral badge-soft" />
                 </div>
-
-                <span
-                    class="rounded-full bg-gray-100 px-3 py-1
-                           text-xs font-semibold text-gray-700
-                           dark:bg-gray-800 dark:text-gray-300"
-                >
-                    {{ $permissions->count() }} disponibles
-                </span>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                    <thead class="bg-gray-50 dark:bg-gray-900/50">
-                        <tr>
-                            <th class="w-16 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                Sel.
-                            </th>
-
-                            <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                Permiso
-                            </th>
-
-                            <th class="w-32 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                Estado
-                            </th>
-                        </tr>
-                    </thead>
-
-                    <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-transparent">
-                        @forelse ($permissions as $permission)
-
-                            @php
-                                $isSelected = in_array(
-                                    (int) $permission->id,
-                                    $permissionIds,
-                                    true
-                                );
-                            @endphp
-
-                            <tr wire:key="permission-row-{{ $permission->id }}">
-                                <td class="px-5 py-3">
-                                    <input
-                                        type="checkbox"
+                <div class="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-base-300 p-2">
+                    @forelse ($permissions as $permission)
+                        <div wire:key="role-permission-{{ $permission->id }}"
+                             class="rounded-md px-2 py-1 hover:bg-base-200">
+                            <x-checkbox :label="$permission->name"
                                         value="{{ $permission->id }}"
                                         wire:model.number.live="permissionIds"
-                                        class="h-4 w-4 rounded border-gray-300
-                                               text-blue-600 focus:ring-blue-500
-                                               dark:border-gray-600 dark:bg-gray-800"
-                                    >
-                                </td>
-
-                                <td class="px-5 py-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    {{ $permission->name }}
-                                </td>
-
-                                <td class="px-5 py-3">
-                                    @if ($isSelected)
-                                        <span class="inline-flex rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-500/10 dark:text-green-400">
-                                            Asignado
-                                        </span>
-                                    @else
-                                        <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                                            Disponible
-                                        </span>
-                                    @endif
-                                </td>
-                            </tr>
-
-                        @empty
-                            <tr>
-                                <td colspan="3" class="px-5 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                                    No existen permisos disponibles.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                        class="checkbox-primary checkbox-sm"
+                                        omit-error />
+                        </div>
+                    @empty
+                        <p class="py-4 text-center text-sm text-base-content/60">
+                            No existen permisos disponibles.
+                        </p>
+                    @endforelse
+                </div>
+                @error('permissionIds')
+                    <p class="mt-2 text-xs text-error">{{ $message }}</p>
+                @enderror
+                @foreach ($errors->get('permissionIds.*') as $messages)
+                    @foreach ((array) $messages as $message)
+                        <p class="mt-1 text-xs text-error">{{ $message }}</p>
+                    @endforeach
+                @endforeach
+            </x-card>
         </div>
-
-        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
-            <a
-                href="{{ route('roles.index') }}"
-                class="inline-flex items-center justify-center rounded-lg
-                       border border-gray-300 bg-white px-4 py-2.5
-                       text-sm font-medium text-gray-700 shadow-sm
-                       transition hover:bg-gray-50
-                       dark:border-gray-700 dark:bg-gray-800
-                       dark:text-gray-300 dark:hover:bg-gray-700"
-            >
-                Cancelar
-            </a>
-
-            <button
-                type="submit"
-                wire:loading.attr="disabled"
-                wire:target="save"
-                class="inline-flex items-center justify-center rounded-lg
-                       bg-blue-600 px-4 py-2.5
-                       text-sm font-medium text-white shadow-sm
-                       transition hover:bg-blue-700
-                       disabled:cursor-not-allowed disabled:opacity-60"
-            >
-                <span wire:loading.remove wire:target="save">
-                    Guardar rol
-                </span>
-
-                <span wire:loading wire:target="save">
-                    Guardando...
-                </span>
-            </button>
-
-        </div>
-
-    </form>
-
+        <x-slot:actions>
+            <x-button label="Cancelar" :link="route('roles.index')"
+                      no-wire-navigate class="btn-ghost" />
+            <x-button label="Crear rol" icon="o-plus"
+                      type="submit" spinner="save" class="btn-primary" />
+        </x-slot:actions>
+    </x-form>
 </div>
