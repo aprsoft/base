@@ -8,7 +8,7 @@
     </div>
 
     <div class="space-y-6">
-        <livewire:central.permission.permission-table />
+        <livewire:permission.permission-table />
     </div>
   
 @endsection

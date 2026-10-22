@@ -150,7 +150,7 @@ final class PermissionTable extends PowerGridComponent
                     'hover:bg-green-700 flex items-center justify-center'
                 )
                 ->route(
-                    'central.permissions.show',
+                    'permissions.show',
                     ['permission' => $row->id]
                 ),
 
@@ -161,7 +161,7 @@ final class PermissionTable extends PowerGridComponent
                     'hover:bg-gray-700 flex items-center justify-center'
                 )
                 ->route(
-                    'central.permissions.edit',
+                    'permissions.edit',
                     ['permission' => $row->id]
                 ),
 
@@ -190,8 +190,8 @@ final class PermissionTable extends PowerGridComponent
         return in_array(
             Route::currentRouteName(),
             [
-                'central.roles.create',
-                'central.roles.edit',
+                'roles.create',
+                'roles.edit',
             ],
             true
         );

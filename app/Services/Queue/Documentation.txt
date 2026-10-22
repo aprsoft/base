@@ -1,0 +1,68 @@
+Usuario / Livewire
+      │
+      ▼
+Job::dispatch()
+      │
+      ▼
+AppServiceProvider
+Queue::createPayloadUsing()
+      │
+      │ agrega:
+      │ - scope
+      │ - tenant_id
+      │ - user_id
+      ▼
+Queue
+      │
+      ▼
+queue:work
+      │
+      ▼
+Job::handle()
+      │
+      ├─────────────────────────────┐
+      │                             │
+      ▼                             ▼
+   ÉXITO                          FALLO
+      │                             │
+      ▼                             ▼
+JobProcessed                   JobFailed
+      │                             │
+      ▼                             ▼
+Queue::after()                Queue::failing()
+      │                             │
+      ▼                             ▼
+JobSuccessHandler             JobFailureHandler
+      │                             │
+      │                             ├───────────────┐
+      ▼                             ▼               ▼
+JobNotificationService     ErrorLogger     JobNotificationService
+      │                             │               │
+      │                             ▼               │
+      │                        error_logs            │
+      │                                             │
+      └──────────────┐                  ┌────────────┘
+                     ▼                  ▼
+              ¿Job notificable?
+                     │
+               ┌─────┴─────┐
+               │           │
+              NO          SÍ
+               │           │
+               ▼           ▼
+              FIN    JobNotification
+                           │
+                           ▼
+                    PrivateChannel
+                           │
+                           ▼
+                         Reverb
+                           │
+                           ▼
+                          Echo
+                           │
+                           ▼
+              partials/alert.blade.php
+                           │
+                           ▼
+                 Mensaje al usuario

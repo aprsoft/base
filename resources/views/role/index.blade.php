@@ -8,6 +8,6 @@
     </div>
 
     <div class="space-y-6">
-        <livewire:central.role.role-table/> 
+        <livewire:role.role-table/> 
     </div>
 @endsection

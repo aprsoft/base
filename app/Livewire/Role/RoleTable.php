@@ -89,7 +89,7 @@ final class RoleTable extends PowerGridComponent
                     'px-2 py-1 bg-green-600 text-white rounded ' .
                     'hover:bg-green-700 flex items-center justify-center'
                 )
-                ->route('central.roles.show', ['role' => $row->id]),
+                ->route('roles.show', ['role' => $row->id]),
 
             Button::add('edit')
                 ->icon('default-pencil')
@@ -97,7 +97,7 @@ final class RoleTable extends PowerGridComponent
                     'px-2 py-1 bg-gray-600 text-white rounded ' .
                     'hover:bg-gray-700 flex items-center justify-center'
                 )
-                ->route('central.roles.edit', ['role' => $row->id])
+                ->route('roles.edit', ['role' => $row->id])
         ];
     }
 

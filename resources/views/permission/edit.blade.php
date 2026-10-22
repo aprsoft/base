@@ -4,7 +4,7 @@
     <x-common.page-breadcrumb pageTitle="Editar Permiso" />
 
     <div class="space-y-6">
-        <livewire:central.permission.edit-permission
+        <livewire:permission.edit-permission
             :permission-id="$permission->id"
         />
     </div>

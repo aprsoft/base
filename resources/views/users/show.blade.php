@@ -5,7 +5,7 @@
 
     <div class="space-y-6">     
       
-        <livewire:user.user-show/>
+        <livewire:user.user-show :user="$user"/>
 
     </div>
       

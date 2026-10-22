@@ -4,7 +4,7 @@
     <x-common.page-breadcrumb pageTitle="Editar Rol" />
 
     <div class="space-y-6">
-        <livewire:central.role.edit-role
+        <livewire:role.edit-role
             :role-id="$role->id"
         />
     </div>
