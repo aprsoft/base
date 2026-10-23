@@ -29,10 +29,31 @@ final class UserTable extends PowerGridComponent
         ];
     }
 
+  
+  
+
     public function datasource(): Builder
     {
-        return User::withTrashed();
+        $user = auth('web')->user();
+
+        abort_unless($user?->can('users.index'), 403);
+
+        return User::withTrashed()
+            ->when(
+                ! $user->hasRole('SuperAdmin', 'web'),
+                fn (Builder $query) => $query
+                    ->where('id', '!=', 1)
+                    ->whereDoesntHave(
+                        'roles',
+                        fn (Builder $roles) => $roles
+                            ->where('name', 'SuperAdmin')
+                            ->where('guard_name', 'web')
+                    )
+            );
     }
+
+
+
 
     public function relationSearch(): array
     {
