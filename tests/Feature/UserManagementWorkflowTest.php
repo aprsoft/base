@@ -16,11 +16,50 @@ test('un usuario sin permiso no puede abrir la edición', function () {
     Livewire::actingAs($actor)->test(UserEdit::class, ['user' => $target])->assertForbidden();
 });
 
-test('el usuario protegido con ID 1 no puede editarse', function () {
-    $actor = User::factory()->create();
-    $actor->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
+test('SuperAdmin puede editar la cuenta principal con ID 1', function () {
+    $principal = User::factory()->create();
+    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
 
-    $this->actingAs($actor)->get(route('users.edit', $actor))->assertForbidden();
+    $this->actingAs($principal)->get(route('users.edit', $principal))->assertOk();
+
+    Livewire::actingAs($principal)
+        ->test(UserEdit::class, ['user' => $principal])
+        ->assertHasNoErrors();
+});
+
+test('el usuario sin SuperAdmin no accede a la cuenta principal', function () {
+    $principal = User::factory()->create();
+    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
+    $admin = User::factory()->create();
+    $role = Role::create(['name' => 'Admin', 'guard_name' => 'web']);
+    $admin->assignRole($role);
+
+    foreach (['users.index', 'users.edit'] as $permission) {
+        $role->givePermissionTo(\Spatie\Permission\Models\Permission::create([
+            'name' => $permission, 'guard_name' => 'web',
+        ]));
+    }
+
+    $this->actingAs($admin)->get(route('users.edit', $principal))->assertForbidden();
+    $this->actingAs($admin)->get(route('users.show', $principal))->assertForbidden();
+    Livewire::actingAs($admin)->test(UserEdit::class, ['user' => $principal])->assertForbidden();
+
+    expect((new \App\Livewire\User\UserTable())->datasource()->pluck('id')->all())
+        ->not->toContain($principal->id);
+});
+
+test('la cuenta principal conserva su rol SuperAdmin', function () {
+    $principal = User::factory()->create();
+    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
+    $adminRole = Role::create(['name' => 'Admin', 'guard_name' => 'web']);
+
+    Livewire::actingAs($principal)
+        ->test(UserEdit::class, ['user' => $principal])
+        ->set('roleIds', [$adminRole->id])
+        ->call('confirmSave')
+        ->assertHasErrors(['roleIds']);
+
+    expect($principal->fresh()->hasRole('SuperAdmin', 'web'))->toBeTrue();
 });
 
 test('la creación solicita confirmación antes de guardar', function () {

@@ -82,3 +82,12 @@ test('el usuario con ID 1 no puede mostrarse', function () {
         ->test(UserShow::class, ['user' => $firstUser])
         ->assertForbidden();
 });
+
+test('SuperAdmin puede visualizar el usuario ID 1', function () {
+    $principal = User::factory()->create();
+    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
+
+    $this->actingAs($principal)->get(route('users.show', $principal))->assertOk();
+    Livewire::actingAs($principal)
+        ->test(UserShow::class, ['user' => $principal])->assertHasNoErrors();
+});

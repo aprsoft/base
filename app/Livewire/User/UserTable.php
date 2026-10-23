@@ -5,6 +5,7 @@ namespace App\Livewire\User;
 use App\Models\user;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 use PowerComponents\LivewirePowerGrid\Facades\Filter;
@@ -34,9 +35,9 @@ final class UserTable extends PowerGridComponent
 
     public function datasource(): Builder
     {
-        $user = auth('web')->user();
+        Gate::authorize('viewAny', User::class);
 
-        abort_unless($user?->can('users.index'), 403);
+        $user = auth('web')->user();
 
         return User::withTrashed()
             ->when(

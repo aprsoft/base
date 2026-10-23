@@ -173,3 +173,17 @@ test('un correo manipulado sin activar la casilla no cambia destinatario', funct
         $job->recipient === 'perfil@example.org'
     );
 });
+
+test('SuperAdmin puede descargar el PDF del usuario ID 1', function () {
+    $principal = User::factory()->create();
+    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
+    Pdf::fake();
+
+    $this->actingAs($principal)->get(route('pdf.download', [
+        'type' => 'user.profile', 'record' => $principal->id,
+    ]))->assertOk();
+    Pdf::assertRespondedWithPdf(fn (PdfBuilder $pdf) =>
+        $pdf->viewName === 'pdf.users.profile'
+        && $pdf->downloadName === 'usuario-'.$principal->id.'.pdf'
+    );
+});

@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -42,23 +43,14 @@ class UserEdit extends Component
 
     private function authorizeTarget(User $user): void
     {
-        abort_unless(auth('web')->user()?->can('users.edit'), 403);
-        abort_if((int) $user->id === 1, 403);
+        Gate::authorize('update', $user);
         abort_if($user->trashed(), 404);
-
-        if ($user->hasRole('SuperAdmin', 'web')) {
-            abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
-        }
     }
 
     private function editableUser(): User
     {
-        abort_unless(auth('web')->user()?->can('users.edit'), 403);
-        abort_if($this->userId === 1, 403);
-
         $user = User::query()->findOrFail($this->userId);
         $this->authorizeTarget($user);
-
         return $user;
     }
 
@@ -79,7 +71,7 @@ class UserEdit extends Component
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));
 
-        return $this->validate([
+        $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -106,6 +98,32 @@ class UserEdit extends Component
             'roleIds.*.distinct' => 'No puedes seleccionar un rol más de una vez.',
             'roleIds.*.in' => 'Uno de los roles seleccionados no está permitido.',
         ]);
+
+        $this->ensurePrincipalRole($user, $validated['roleIds']);
+
+        return $validated;
+    }
+
+    private function ensurePrincipalRole(User $user, array $roleIds): void
+    {
+        if ((int) $user->getKey() !== 1) {
+            return;
+        }
+
+        $superAdminRole = Role::query()
+            ->where('name', 'SuperAdmin')
+            ->where('guard_name', 'web')
+            ->first();
+
+        if (! $superAdminRole || ! in_array(
+            (int) $superAdminRole->getKey(),
+            array_map('intval', $roleIds),
+            true
+        )) {
+            throw ValidationException::withMessages([
+                'roleIds' => 'La cuenta principal debe conservar el rol SuperAdmin.',
+            ]);
+        }
     }
 
     private function rolesChanged(User $user, array $requestedIds): bool
@@ -209,6 +227,8 @@ class UserEdit extends Component
                         'roleIds' => 'Los roles seleccionados ya no están disponibles.',
                     ]);
                 }
+
+                $this->ensurePrincipalRole($user, $requestedIds);
 
                 $user->fill([
                     'name' => $validated['name'],
