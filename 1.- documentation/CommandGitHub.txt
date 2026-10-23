@@ -1,0 +1,12 @@
+** Descarga y actualiza al repositorio local todo lo de la rama 'main'
+
+git -C ~/Proyectos/base pull --ff-only origin main
+
+
+** Revisar tu repositorio local
+
+git -C ~/Proyectos/base status --short --branch
+
+** Actualiza la rama desde github
+
+git -C ~/Proyectos/base pull --ff-only origin feature/pdf-documents

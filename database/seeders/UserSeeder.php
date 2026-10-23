@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
 
-            User::factory()->create([            
+            User::factory()->create([                          
                 'name' => 'SuperAdministrador',            
                 'email' => 'superadmin@aprsoft.cl',
             ])->assignRole('SuperAdmin');

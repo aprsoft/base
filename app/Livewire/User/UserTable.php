@@ -31,7 +31,7 @@ final class UserTable extends PowerGridComponent
 
     public function datasource(): Builder
     {
-        return User::withTrashed()->where('id', '!=', 1);
+        return User::withTrashed();
     }
 
     public function relationSearch(): array

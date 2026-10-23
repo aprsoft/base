@@ -1,3 +1,0 @@
-Descarga y actualiza al repositorio local todo lo de la rama 'main'
-
-git -C ~/Proyectos/base pull --ff-only origin main
