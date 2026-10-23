@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ErrorController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\PdfController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +12,12 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth'])->group(function () {
+    // Tipos de PDF permitidos exclusivamente por PdfRegistry.
+    Route::get('pdf/{type}/{record}', [PdfController::class, 'show'])
+        ->whereNumber('record')->name('pdf.show');
+    Route::get('pdf/{type}/{record}/download', [PdfController::class, 'download'])
+        ->whereNumber('record')->name('pdf.download');
+
     Route::get('/dashboard', function () {
         return view('dashboard', ['title' => 'Dashboard']);
     })->name('dashboard');

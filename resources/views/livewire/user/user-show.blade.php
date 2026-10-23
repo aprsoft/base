@@ -25,6 +25,8 @@
         </div>
     </div>
 
+    <livewire:pdf.pdf-actions type="user.profile" :record-id="$user->id" :key="'user-pdf-'.$user->id" />
+
     <x-card shadow>
         <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
             <div class="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-xl font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"
