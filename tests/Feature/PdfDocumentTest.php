@@ -117,6 +117,8 @@ test('el correo se solicita sin generar ni serializar el PDF en la petición', f
     Livewire::actingAs($viewer)
         ->test(PdfActions::class, ['type' => 'user.profile', 'recordId' => $target->id])
         ->call('openEmail')
+        ->set('newRecipient', true)
+        ->assertSet('recipient', '')
         ->set('recipient', 'destinatario@example.org')
         ->call('send')
         ->assertHasNoErrors()
@@ -124,5 +126,50 @@ test('el correo se solicita sin generar ni serializar el PDF en la petición', f
 
     Bus::assertDispatched(SendPdfEmailJob::class, fn (SendPdfEmailJob $job) =>
         $job->type === 'user.profile' && $job->recordId === $target->id && $job->actorId === $viewer->id
+    );
+});
+
+test('modal comienza con correo del usuario y casilla desmarcada', function () {
+    User::factory()->create();
+    $viewer = makePdfViewer(true);
+    $target = User::factory()->create(['email' => 'perfil@example.org']);
+
+    Livewire::actingAs($viewer)
+        ->test(PdfActions::class, ['type' => 'user.profile', 'recordId' => $target->id])
+        ->call('openEmail')
+        ->assertSet('newRecipient', false)
+        ->assertSet('recipient', 'perfil@example.org');
+});
+
+test('casilla activa limpia el campo y al desmarcar restaura correo', function () {
+    User::factory()->create();
+    $viewer = makePdfViewer(true);
+    $target = User::factory()->create(['email' => 'perfil@example.org']);
+
+    Livewire::actingAs($viewer)
+        ->test(PdfActions::class, ['type' => 'user.profile', 'recordId' => $target->id])
+        ->call('openEmail')
+        ->set('newRecipient', true)
+        ->assertSet('recipient', '')
+        ->set('recipient', 'otro@example.org')
+        ->set('newRecipient', false)
+        ->assertSet('recipient', 'perfil@example.org');
+});
+
+test('un correo manipulado sin activar la casilla no cambia destinatario', function () {
+    User::factory()->create();
+    $viewer = makePdfViewer(true);
+    $target = User::factory()->create(['email' => 'perfil@example.org']);
+    Bus::fake();
+
+    Livewire::actingAs($viewer)
+        ->test(PdfActions::class, ['type' => 'user.profile', 'recordId' => $target->id])
+        ->call('openEmail')
+        ->set('recipient', 'tercero@example.org')
+        ->call('send')
+        ->assertHasNoErrors();
+
+    Bus::assertDispatched(SendPdfEmailJob::class, fn (SendPdfEmailJob $job) =>
+        $job->recipient === 'perfil@example.org'
     );
 });

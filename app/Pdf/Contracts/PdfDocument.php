@@ -18,4 +18,6 @@ interface PdfDocument
     public function fileName(int $recordId): string;
 
     public function subject(int $recordId): string;
+
+    public function defaultRecipient(int $recordId): ?string;
 }

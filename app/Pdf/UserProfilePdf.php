@@ -50,6 +50,11 @@ final class UserProfilePdf implements PdfDocument
         return "usuario-{$recordId}.pdf";
     }
 
+    public function defaultRecipient(int $recordId): ?string
+    {
+        return User::withTrashed()->findOrFail($recordId)->email;
+    }
+
     public function subject(int $recordId): string
     {
         return "Perfil del usuario #{$recordId}";

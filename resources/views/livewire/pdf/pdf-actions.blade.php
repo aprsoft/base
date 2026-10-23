@@ -30,10 +30,19 @@
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/60 p-4" role="presentation">
             <div role="dialog" aria-modal="true" aria-labelledby="pdf-email-title-{{ $recordId }}"
                  class="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900">
-                <h4 id="pdf-email-title-{{ $recordId }}" class="text-lg font-semibold text-gray-900 dark:text-white">Enviar perfil por correo</h4>
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <h4 id="pdf-email-title-{{ $recordId }}" class="text-lg font-semibold text-gray-900 dark:text-white">Enviar perfil por correo</h4>
+                    <label class="flex cursor-pointer items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                        <input type="checkbox" wire:model.live="newRecipient"
+                               class="size-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        Nuevo destinatario
+                    </label>
+                </div>
+                <p class="mt-2 text-right text-xs text-gray-500 dark:text-gray-400">Marca esta opción para ingresar otro correo electrónico.</p>
                 <form wire:submit="send" class="mt-4 space-y-3">
                     <label for="pdf-recipient-{{ $recordId }}" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Destinatario</label>
                     <input id="pdf-recipient-{{ $recordId }}" type="email" wire:model="recipient"
+                           @readonly(! $newRecipient)
                            required autocomplete="email" maxlength="254"
                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                            placeholder="correo@ejemplo.cl">

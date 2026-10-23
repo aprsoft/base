@@ -22,6 +22,8 @@ final class PdfActions extends Component
 
     public string $recipient = '';
 
+    public bool $newRecipient = false;
+
     public bool $showEmailForm = false;
 
     public string $notice = '';
@@ -44,7 +46,26 @@ final class PdfActions extends Component
 
         $this->resetValidation();
         $this->notice = '';
+        $this->newRecipient = false;
+        $this->recipient = app(PdfGenerator::class)
+            ->document($this->type)
+            ->defaultRecipient($this->recordId) ?? '';
         $this->showEmailForm = true;
+    }
+
+    public function updatedNewRecipient(bool $checked): void
+    {
+        $actor = Auth::guard('web')->user();
+        abort_unless($actor && $this->showEmailForm, 403);
+
+        $pdfs = app(PdfGenerator::class);
+        $pdfs->authorize($this->type, $this->recordId, $actor, 'email');
+
+        $this->recipient = $checked
+            ? ''
+            : ($pdfs->document($this->type)->defaultRecipient($this->recordId) ?? '');
+
+        $this->resetValidation('recipient');
     }
 
     public function closeEmail(): void
@@ -58,6 +79,13 @@ final class PdfActions extends Component
         abort_unless($actor, 403);
         app(PdfGenerator::class)->authorize($this->type, $this->recordId, $actor, 'email');
         abort_unless($this->showEmailForm, 403);
+
+        // Evitar que una manipulación del estado del navegador desvíe el envío
+        // cuando no se ha activado expresamente «Nuevo destinatario».
+        $this->recipient = $this->newRecipient
+            ? trim($this->recipient)
+            : (app(PdfGenerator::class)->document($this->type)
+                ->defaultRecipient($this->recordId) ?? '');
 
         $validated = $this->validate([
             'recipient' => ['required', 'email:rfc', 'max:254'],
