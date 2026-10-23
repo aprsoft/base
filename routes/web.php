@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ErrorController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -64,6 +65,15 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('permissions/{permission}', [PermissionController::class, 'show'])
         ->name('permissions.show');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Error_log
+    |--------------------------------------------------------------------------
+    */
+
+        Route::get('errors', [ErrorController::class, 'index'])->name('errors.index');
+        Route::get('errors/{errorLog}', [ErrorController::class, 'show'])->name('errors.show');
 
 });
 

@@ -89,17 +89,18 @@ class MenuHelper
         ];
     }    
 
-    // public static function getSupportItems(): array
-    // {
-    //     return [            
-    //         [
-    //             'icon' => 'support',
-    //             'name' => 'Errores',
-    //              'path' => route('errors.index', absolute: false),
-    //             'pro' => false
-    //         ],
-    //     ];
-    // }
+    public static function getSupportItems(): array
+    {
+        return [            
+            [
+                'icon' => 'support',
+                'name' => 'Errores',
+                'path' => route('errors.index', absolute: false),
+                'permission' => 'errors.index',
+                'pro' => false
+            ],
+        ];
+    }
 
     // public static function getMenuGroups(): array
     // {   
@@ -144,10 +145,10 @@ class MenuHelper
                 'title' => 'Roles y Permisos',
                 'items' => self::getRolesPermissionsItems(),
             ],
-            // [
-            //     'title' => 'Soporte',
-            //     'items' => self::getSupportItems(),
-            // ],
+            [
+                'title' => 'Soporte',
+                'items' => self::getSupportItems(),
+            ],
         ];
 
         foreach ($groups as &$group) {
