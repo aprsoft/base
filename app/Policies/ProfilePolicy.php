@@ -9,7 +9,7 @@ class ProfilePolicy
 {
     public function view(User $actor, User $target): bool
     {
-        return $this->canManage(
+        return $this->canManageOwnProfile(
             $actor,
             $target,
             'profile.view'
@@ -18,33 +18,16 @@ class ProfilePolicy
 
     public function update(User $actor, User $target): bool
     {
-        return $this->canManage(
+        return $this->canManageOwnProfile(
             $actor,
             $target,
             'profile.update'
         );
     }
 
-    public function updatePassword(User $actor, User $target): bool 
-    {
-        if (! $actor->is($target)) {
-            return false;
-        }
-
-        if (ProtectedSystemAccount::isPrimary($target)) {
-            return true;
-        }
-
-        return $actor->hasRole('SuperAdmin', 'web')
-            || $actor->hasPermissionTo(
-                'profile.password.update',
-                'web'
-            );
-    }
-
     public function delete(User $actor, User $target): bool
     {
-        return $this->canManage(
+        return $this->canManageOwnProfile(
             $actor,
             $target,
             'profile.delete'
@@ -55,11 +38,25 @@ class ProfilePolicy
         User $actor,
         User $target
     ): bool {
-        // Cambiar la contraseña propia siempre está permitido.
-        return $actor->is($target);
+        // Solo se permite cambiar la propia contraseña.
+        if (! $actor->is($target)) {
+            return false;
+        }
+
+        // Todos los SuperAdmin, principal y secundarios,
+        // pueden cambiar su propia contraseña.
+        if ($actor->hasRole('SuperAdmin', 'web')) {
+            return true;
+        }
+
+        // Los demás usuarios requieren el permiso.
+        return $actor->hasPermissionTo(
+            'profile.password.update',
+            'web'
+        );
     }
 
-    private function canManage(
+    private function canManageOwnProfile(
         User $actor,
         User $target,
         string $permission
@@ -68,15 +65,22 @@ class ProfilePolicy
             return false;
         }
 
+        // Prohibido editar o eliminar el perfil
+        // del SuperAdministrador principal.
         if (ProtectedSystemAccount::isPrimary($target)) {
             return false;
         }
 
-        // SuperAdmin adicional conserva sus atribuciones.
+        // Todos los SuperAdmin secundarios tienen
+        // las mismas restricciones de perfil propio.
         if ($actor->hasRole('SuperAdmin', 'web')) {
-            return true;
+            return false;
         }
 
-        return $actor->hasPermissionTo($permission, 'web');
+        // Usuarios normales: permisos asignados.
+        return $actor->hasPermissionTo(
+            $permission,
+            'web'
+        );
     }
 }

@@ -23,24 +23,32 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Role::class, RolePolicy::class);
 
-        // ProfilePolicy se registra mediante habilidades específicas,
-        // porque User::class ya utiliza UserPolicy.
+        /*
+         * Autorizaciones del perfil propio.
+         */
         Gate::define('profile.view', [
-            ProfilePolicy::class, 'view',
+            ProfilePolicy::class,
+            'view',
         ]);
 
         Gate::define('profile.update', [
-            ProfilePolicy::class, 'update',
+            ProfilePolicy::class,
+            'update',
         ]);
 
         Gate::define('profile.delete', [
-            ProfilePolicy::class, 'delete',
+            ProfilePolicy::class,
+            'delete',
         ]);
 
         Gate::define('profile.changePassword', [
-            ProfilePolicy::class, 'changePassword',
+            ProfilePolicy::class,
+            'changePassword',
         ]);
 
+        /*
+         * Acceso global de SuperAdmin con excepciones.
+         */
         Gate::before(function (
             User $actor,
             string $ability,
@@ -48,27 +56,32 @@ class AppServiceProvider extends ServiceProvider
         ): ?bool {
             $target = $arguments[0] ?? null;
 
-            // Protección absoluta del rol reservado en Gate.
+            /*
+             * El rol reservado SuperAdmin no puede
+             * modificarse ni eliminarse.
+             */
             if (
                 $target instanceof Role
                 && $target->name === 'SuperAdmin'
                 && $target->guard_name === 'web'
+                && in_array(
+                    $ability,
+                    ['update', 'delete', 'forceDelete'],
+                    true
+                )
             ) {
-                if (in_array($ability, [
-                    'update',
-                    'delete',
-                    'forceDelete',
-                ], true)) {
-                    return false;
-                }
+                return false;
             }
 
-            // La cuenta principal no admite operaciones sobre su
-            // perfil ni acciones administrativas dirigidas a ella.
+            /*
+             * La cuenta principal está protegida
+             * de toda modificación administrativa.
+             */
             if (
                 $target instanceof User
                 && ProtectedSystemAccount::isPrimary($target)
             ) {
+                // Única excepción: su propia contraseña.
                 if ($ability === 'profile.changePassword') {
                     return $actor->is($target);
                 }
@@ -76,12 +89,43 @@ class AppServiceProvider extends ServiceProvider
                 return false;
             }
 
-            // Las reglas de perfiles pasan por ProfilePolicy.
+            /*
+             * Todas las acciones de perfil propio
+             * deben pasar por ProfilePolicy.
+             *
+             * Esto incluye a TODOS los SuperAdmin.
+             */
             if (str_starts_with($ability, 'profile.')) {
                 return null;
             }
 
-            // Acceso general de SuperAdmin.
+            /*
+             * Las acciones administrativas sobre User
+             * deben pasar obligatoriamente por UserPolicy.
+             *
+             * Así ningún SuperAdmin puede saltarse
+             * la jerarquía acordada.
+             */
+            if (
+                $target instanceof User
+                && in_array(
+                    $ability,
+                    [
+                        'update',
+                        'delete',
+                        'suspend',
+                        'restore',
+                        'forceDelete',
+                    ],
+                    true
+                )
+            ) {
+                return null;
+            }
+
+            /*
+             * Acceso global restante.
+             */
             return $actor->hasRole('SuperAdmin', 'web')
                 ? true
                 : null;
