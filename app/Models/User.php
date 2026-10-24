@@ -12,6 +12,13 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
+    public const PRIMARY_SUPER_ADMIN_KEY = 'primary_superadmin';
+
+    public function isPrimarySuperAdmin(): bool
+    {
+        return $this->system_account_key === self::PRIMARY_SUPER_ADMIN_KEY;
+    }
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
     use HasRoles;

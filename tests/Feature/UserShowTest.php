@@ -68,11 +68,11 @@ test('se puede consultar el estado de un usuario suspendido', function () {
         ->assertSee('Suspendido');
 });
 
-test('el usuario con ID 1 no puede mostrarse', function () {
+test('la cuenta principal no puede mostrarse', function () {
     $firstUser = User::factory()->create();
     $viewer = makeUserViewer();
 
-    expect($firstUser->id)->toBe(1);
+    $firstUser->forceFill(['system_account_key' => User::PRIMARY_SUPER_ADMIN_KEY])->save();
 
     $this->actingAs($viewer)
         ->get(route('users.show', $firstUser))
@@ -83,13 +83,14 @@ test('el usuario con ID 1 no puede mostrarse', function () {
         ->assertForbidden();
 });
 
-test('SuperAdmin puede visualizar el usuario ID 1', function () {
+test('SuperAdmin no puede visualizar la cuenta principal', function () {
     $principal = User::factory()->create();
     $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
 
-    $this->actingAs($principal)->get(route('users.show', $principal))->assertOk();
+    $principal->forceFill(['system_account_key' => User::PRIMARY_SUPER_ADMIN_KEY])->save();
+    $this->actingAs($principal)->get(route('users.show', $principal))->assertForbidden();
     Livewire::actingAs($principal)
-        ->test(UserShow::class, ['user' => $principal])->assertHasNoErrors();
+        ->test(UserShow::class, ['user' => $principal])->assertForbidden();
 });
 
 test('show del SuperAdmin presenta acceso global sin listado de roles', function () {

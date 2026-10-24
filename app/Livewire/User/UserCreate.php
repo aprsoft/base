@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -22,7 +23,17 @@ class UserCreate extends Component
     public string $name = '';
     public string $email = '';
     public array $roleIds = [];
-   
+
+    private function authorizeManagement(): void
+    {
+        Gate::authorize('create', User::class);
+    }
+
+    public function mount(): void
+    {
+        $this->authorizeManagement();
+    }
+
 
     // Obtiene todos los roles que existen en la BD
     private function assignableRoles(): Collection
@@ -86,7 +97,9 @@ class UserCreate extends Component
     ];
 
     public function confirmSave(): void
-    {       
+    {
+        $this->authorizeManagement();
+       
 
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));
@@ -105,7 +118,9 @@ class UserCreate extends Component
     }
 
     public function confirmRemoveRole(int $roleId): void
-    {        
+    {
+        $this->authorizeManagement();
+        
 
         $role = $this->assignableRoles()->firstWhere('id', $roleId);
         if (! $role || ! in_array($roleId, array_map('intval', $this->roleIds), true)) {
@@ -127,6 +142,8 @@ class UserCreate extends Component
     #[\Livewire\Attributes\On('user-create-remove-role-confirmed')]
     public function removeRole(int $roleId): void
     {
+        $this->authorizeManagement();
+
       
 
         if (! $this->assignableRoles()->contains('id', $roleId)) {
@@ -141,7 +158,9 @@ class UserCreate extends Component
 
     #[\Livewire\Attributes\On('user-create-save-confirmed')]
     public function save(int $id, ErrorLogger $errorLogger)
-    {      
+    {
+        $this->authorizeManagement();
+      
 
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));
@@ -295,6 +314,8 @@ class UserCreate extends Component
 
     public function render(): View
     {
+        $this->authorizeManagement();
+
         $roles = $this->assignableRoles();
 
         $selectedIds = array_map('intval', $this->roleIds);

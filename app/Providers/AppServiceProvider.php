@@ -34,8 +34,8 @@ class AppServiceProvider extends ServiceProvider
      *
      * Configura una autorización previa mediante Gate::before():
      *
-     * - Si el usuario tiene el rol SuperAdmin, concede
-     *   la autorización sin evaluar las reglas posteriores.
+     * - Deniega acciones sobre la cuenta principal protegida.
+     * - SuperAdmin conserva acceso global al resto del sistema.
      *
      * - Si el usuario no tiene el rol SuperAdmin, devuelve
      *   null para continuar con la evaluación normal
@@ -51,10 +51,15 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(User::class, UserPolicy::class);
 
-        Gate::before(function ($user, $ability) {
-            return $user->hasRole('SuperAdmin')
-                ? true
-                : null;
+        Gate::before(function (User $user, string $ability, array $arguments = []): ?bool {
+            // La cuenta inicial queda fuera de las autorizaciones por modelo.
+            $target = $arguments[0] ?? null;
+
+            if ($target instanceof User && $target->isPrimarySuperAdmin()) {
+                return false;
+            }
+
+            return $user->hasRole('SuperAdmin', 'web') ? true : null;
         });
     }
 }
