@@ -7,8 +7,8 @@ use App\Models\User;
 /**
  * Autorizaciones de consulta y edición de usuarios.
  *
- * La cuenta principal no puede ser administrada por ningún SuperAdmin.
- * Las demás cuentas SuperAdmin mantienen los privilegios del rol.
+ * Los usuarios que no sean SuperAdmin no pueden acceder a cuentas
+ * que tengan ese rol ni a la cuenta principal (ID 1).
  */
 class UserPolicy
 {
@@ -34,11 +34,11 @@ class UserPolicy
 
     private function mayAccess(User $actor, User $target, string $permission): bool
     {
-        if ($target->isPrimarySuperAdmin() || ! $actor->can($permission)) {
+        if (! $actor->can($permission)) {
             return false;
         }
 
-        if ($target->hasRole('SuperAdmin', 'web')) {
+        if ((int) $target->getKey() === 1 || $target->hasRole('SuperAdmin', 'web')) {
             return $actor->hasRole('SuperAdmin', 'web');
         }
 

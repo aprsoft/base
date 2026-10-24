@@ -3,25 +3,46 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $superAdmin = Role::firstOrCreate(['name' => 'SuperAdmin', 'guard_name' => 'web']);
-        $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        $role1 = Role::create([
+            'name' => 'SuperAdmin',
+            'guard_name' => 'web',
+        ]);
 
-        foreach (['users.index', 'users.create', 'users.edit', 'users.destroy'] as $name) {
-            $permission = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
-            $superAdmin->givePermissionTo($permission);
-            $admin->givePermissionTo($permission);
-        }
+        $role2 = Role::create([
+            'name' => 'Admin',
+            'guard_name' => 'web',
+        ]);
 
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        Permission::create([
+            'name' => 'users.index',
+            'guard_name' => 'web',
+        ])->syncRoles($role1, $role2);
+
+        Permission::create([
+            'name' => 'users.create',
+            'guard_name' => 'web',
+        ])->syncRoles($role1, $role2);
+
+        Permission::create([
+            'name' => 'users.edit',
+            'guard_name' => 'web',
+        ])->syncRoles($role1, $role2);
+
+        Permission::create([
+            'name' => 'users.destroy',
+            'guard_name' => 'web',
+        ])->syncRoles($role1, $role2);
+
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }

@@ -14,7 +14,6 @@ class ProfileController extends Controller
 {
     public function edit(Request $request): View
     {
-        abort_if($request->user()->isPrimarySuperAdmin(), 403);
         return view('pages.auth.settings.profile', [
             'user' => $request->user(),
         ]);
@@ -22,7 +21,6 @@ class ProfileController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
-        abort_if($request->user()->isPrimarySuperAdmin(), 403);
         $user = $request->user();
 
         $validated = $request->validate([
@@ -50,7 +48,6 @@ class ProfileController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
-        abort_if($request->user()->isPrimarySuperAdmin(), 403);
         $user = $request->user();
 
         Auth::logout();

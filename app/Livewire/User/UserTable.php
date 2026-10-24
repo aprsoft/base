@@ -2,7 +2,7 @@
 
 namespace App\Livewire\User;
 
-use App\Models\User;
+use App\Models\user;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
@@ -40,10 +40,10 @@ final class UserTable extends PowerGridComponent
         $user = auth('web')->user();
 
         return User::withTrashed()
-            ->whereNull('system_account_key')
             ->when(
                 ! $user->hasRole('SuperAdmin', 'web'),
                 fn (Builder $query) => $query
+                    ->where('id', '!=', 1)
                     ->whereDoesntHave(
                         'roles',
                         fn (Builder $roles) => $roles
@@ -68,7 +68,7 @@ final class UserTable extends PowerGridComponent
             ->add('name')
 
            /** Example of custom column using a closure **/
-            ->add('name_lower', fn (User $model) => strtolower(e($model->name)))
+            ->add('name_lower', fn (user $model) => strtolower(e($model->name)))
 
             ->add('email');
             // ->add('created_at_formatted', fn (user $model) => Carbon::parse($model->created_at)->format('d/m/Y H:i:s'));
@@ -112,7 +112,7 @@ final class UserTable extends PowerGridComponent
         $this->js('alert('.$rowId.')');
     }
 
-    public function actions(User $row): array
+    public function actions(user $row): array
     {
         // return [
         //     Button::add('edit')

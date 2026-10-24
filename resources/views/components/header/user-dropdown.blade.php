@@ -55,7 +55,7 @@
             @php
                 $menuItems = [
                     [
-                        'text' => Auth::user()->isPrimarySuperAdmin() ? 'Cambiar contraseña' : 'Editar perfil',
+                        'text' => 'Edit profile',
                         'icon' => '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path
                                 fill-rule="evenodd"
@@ -64,7 +64,7 @@
                                 fill="currentColor"
                             />
                         </svg>',
-                        'path' => Auth::user()->isPrimarySuperAdmin() ? route('settings.password.edit') : route('settings.profile.edit'),
+                        'path' => route('settings.profile.edit'),
                     ],
                 ];
             @endphp

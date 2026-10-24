@@ -37,7 +37,6 @@ test('las rutas PDF exigen autorización', function () {
 
 test('no se puede descargar el usuario reservado ni un tipo no registrado', function () {
     $protected = User::factory()->create();
-    $protected->forceFill(['system_account_key' => User::PRIMARY_SUPER_ADMIN_KEY])->save();
     $viewer = makePdfViewer();
 
     $this->actingAs($viewer)
@@ -175,13 +174,16 @@ test('un correo manipulado sin activar la casilla no cambia destinatario', funct
     );
 });
 
-test('SuperAdmin no puede descargar el PDF de la cuenta principal', function () {
+test('SuperAdmin puede descargar el PDF del usuario ID 1', function () {
     $principal = User::factory()->create();
-    $principal->forceFill(['system_account_key' => User::PRIMARY_SUPER_ADMIN_KEY])->save();
     $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
     Pdf::fake();
 
     $this->actingAs($principal)->get(route('pdf.download', [
         'type' => 'user.profile', 'record' => $principal->id,
-    ]))->assertForbidden();
+    ]))->assertOk();
+    Pdf::assertRespondedWithPdf(fn (PdfBuilder $pdf) =>
+        $pdf->viewName === 'pdf.users.profile'
+        && $pdf->downloadName === 'usuario-'.$principal->id.'.pdf'
+    );
 });
