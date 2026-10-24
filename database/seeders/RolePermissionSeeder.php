@@ -11,38 +11,67 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        // Limpiar caché de permisos antes de ejecutar.
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        $role1 = Role::create([
+        /*
+        |--------------------------------------------------------------------------
+        | Crear roles
+        |--------------------------------------------------------------------------
+        */
+
+        $superAdmin = Role::firstOrCreate([
             'name' => 'SuperAdmin',
             'guard_name' => 'web',
         ]);
 
-        $role2 = Role::create([
+        $admin = Role::firstOrCreate([
             'name' => 'Admin',
             'guard_name' => 'web',
         ]);
 
-        Permission::create([
-            'name' => 'users.index',
+        $profileBasic = Role::firstOrCreate([
+            'name' => 'profileBasic',
             'guard_name' => 'web',
-        ])->syncRoles($role1, $role2);
+        ]);
 
-        Permission::create([
-            'name' => 'users.create',
-            'guard_name' => 'web',
-        ])->syncRoles($role1, $role2);
+        /*
+        |--------------------------------------------------------------------------
+        | SuperAdmin: acceso global mediante Gate::before()
+        |--------------------------------------------------------------------------
+        |
+        | No necesita permisos asignados directamente al rol.
+        | AppServiceProvider concede el acceso global.
+        |
+        */
 
-        Permission::create([
-            'name' => 'users.edit',
-            'guard_name' => 'web',
-        ])->syncRoles($role1, $role2);
+        $superAdmin->syncPermissions([]);
 
-        Permission::create([
-            'name' => 'users.destroy',
-            'guard_name' => 'web',
-        ])->syncRoles($role1, $role2);
+        /*
+        |--------------------------------------------------------------------------
+        | Crear permisos y asignarlos a Admin
+        |--------------------------------------------------------------------------
+        */
 
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        $permissions = [
+            'users.index',
+            'users.create',
+            'users.edit',
+            'users.destroy',
+            'profile.password.update',
+            'profile.view',
+        ];
+
+        foreach ($permissions as $permissionName) {
+            $permission = Permission::firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => 'web',
+            ]);
+
+            $admin->givePermissionTo($permission);
+        }
+
+        // Refrescar caché después de configurar permisos.
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

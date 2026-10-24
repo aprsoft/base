@@ -9,11 +9,11 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
- 
     public function run(): void
     {
         $this->call([
             RolePermissionSeeder::class,
+            ProfileAdministrationSeeder::class,
             UserSeeder::class,
         ]);
     }
