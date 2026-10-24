@@ -149,8 +149,11 @@
 
             </x-card>
 
-            {{-- Administración de roles --}}
+            {{-- Administración de roles, o aviso de acceso global para SuperAdmin --}}
             <x-card id="edit-user-roles" shadow class="!p-4">
+                @if ($isSuperAdminTarget)
+                    <x-user.super-admin-notice />
+                @else
 
                 <div class="mb-3 flex items-center justify-between gap-2">
 
@@ -266,7 +269,7 @@
                     @endif
 
                 </div>
-
+                @endif
             </x-card>
 
         </div>

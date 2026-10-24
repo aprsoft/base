@@ -55,9 +55,12 @@ test('la cuenta principal conserva su rol SuperAdmin', function () {
 
     Livewire::actingAs($principal)
         ->test(UserEdit::class, ['user' => $principal])
+        ->assertSee('Acceso administrativo global')
+        ->assertDontSee('Roles disponibles')
         ->set('roleIds', [$adminRole->id])
         ->call('confirmSave')
-        ->assertHasErrors(['roleIds']);
+        ->assertHasNoErrors()
+        ->assertNotDispatched('open-confirm-modal');
 
     expect($principal->fresh()->hasRole('SuperAdmin', 'web'))->toBeTrue();
 });
@@ -99,4 +102,24 @@ test('cambiar correo actualiza roles y solicita un enlace al correo nuevo', func
         ->and($target->hasRole('Admin', 'web'))->toBeTrue();
 
     Notification::assertSentTo($target, ResetPassword::class);
+});
+
+test('editar SuperAdmin conserva roles aun con roleIds manipulados', function () {
+    $principal = User::factory()->create();
+    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
+    $otherRole = Role::create(['name' => 'Admin', 'guard_name' => 'web']);
+
+    Livewire::actingAs($principal)
+        ->test(UserEdit::class, ['user' => $principal])
+        ->set('name', 'SuperAdministrador Actualizado')
+        ->set('roleIds', [$otherRole->id])
+        ->call('confirmSave')
+        ->assertDispatched('open-confirm-modal')
+        ->call('save', $principal->id)
+        ->assertHasNoErrors();
+
+    $principal->refresh();
+    expect($principal->name)->toBe('SuperAdministrador Actualizado')
+        ->and($principal->hasRole('SuperAdmin', 'web'))->toBeTrue()
+        ->and($principal->hasRole('Admin', 'web'))->toBeFalse();
 });

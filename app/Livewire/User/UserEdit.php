@@ -71,7 +71,9 @@ class UserEdit extends Component
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));
 
-        $validated = $this->validate([
+        $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
+
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -79,13 +81,18 @@ class UserEdit extends Component
                 'max:255',
                 Rule::unique(User::class, 'email')->ignore($user->id),
             ],
-            'roleIds' => ['required', 'array', 'min:1'],
-            'roleIds.*' => [
+        ];
+
+        if (! $isSuperAdminTarget) {
+            $rules['roleIds'] = ['required', 'array', 'min:1'];
+            $rules['roleIds.*'] = [
                 'integer',
                 'distinct',
                 Rule::in($this->assignableRoles()->modelKeys()),
-            ],
-        ], [
+            ];
+        }
+
+        $validated = $this->validate($rules, [
             'name.required' => 'Debes ingresar el nombre del usuario.',
             'name.max' => 'El nombre no puede superar los 255 caracteres.',
             'email.required' => 'Debes ingresar el correo electrónico.',
@@ -98,6 +105,18 @@ class UserEdit extends Component
             'roleIds.*.distinct' => 'No puedes seleccionar un rol más de una vez.',
             'roleIds.*.in' => 'Uno de los roles seleccionados no está permitido.',
         ]);
+
+        if ($isSuperAdminTarget) {
+            // Se ignoran los roleIds manipulados por Livewire.
+            // La lista de roles efectiva proviene exclusivamente de la BD.
+            $validated['roleIds'] = $user->roles
+                ->where('guard_name', 'web')
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            return $validated;
+        }
 
         $this->ensurePrincipalRole($user, $validated['roleIds']);
 
@@ -144,7 +163,8 @@ class UserEdit extends Component
 
     public function confirmRemoveRole(int $roleId): void
     {
-        $this->editableUser();
+        $user = $this->editableUser();
+        abort_if($user->hasRole('SuperAdmin', 'web'), 403);
 
         $role = $this->assignableRoles()->firstWhere('id', $roleId);
         if (! $role || ! in_array($roleId, array_map('intval', $this->roleIds), true)) {
@@ -166,7 +186,8 @@ class UserEdit extends Component
     #[On('user-edit-remove-role-confirmed')]
     public function removeRole(int $id): void
     {
-        $this->editableUser();
+        $user = $this->editableUser();
+        abort_if($user->hasRole('SuperAdmin', 'web'), 403);
 
         if (! $this->assignableRoles()->contains('id', $id)) {
             return;
@@ -188,7 +209,9 @@ class UserEdit extends Component
             'email' => $validated['email'],
         ]);
 
-        if (! $user->isDirty() && ! $this->rolesChanged($user, $validated['roleIds'])) {
+        $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
+
+        if (! $user->isDirty() && ($isSuperAdminTarget || ! $this->rolesChanged($user, $validated['roleIds']))) {
             $this->alert('info', 'No hay cambios para guardar.');
             return;
         }
@@ -199,7 +222,9 @@ class UserEdit extends Component
             name: $user->name,
             confirmEvent: 'user-edit-save-confirmed',
             title: 'Guardar cambios',
-            message: '¿Confirmas que deseas actualizar los datos y roles de este usuario?',
+            message: $isSuperAdminTarget
+                ? '¿Confirmas que deseas actualizar los datos de este usuario? Sus roles no cambiarán.'
+                : '¿Confirmas que deseas actualizar los datos y roles de este usuario?',
             warning: $user->isDirty('email')
                 ? 'Cambiar el correo solicitará obligatoriamente un enlace para establecer la contraseña en la nueva dirección.'
                 : '',
@@ -221,14 +246,18 @@ class UserEdit extends Component
                 $user = User::query()->lockForUpdate()->findOrFail($this->userId);
                 $this->authorizeTarget($user);
 
-                $roles = $this->assignableRoles()->whereIn('id', $requestedIds);
-                if ($roles->count() !== count($requestedIds)) {
-                    throw ValidationException::withMessages([
-                        'roleIds' => 'Los roles seleccionados ya no están disponibles.',
-                    ]);
-                }
+                $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
 
-                $this->ensurePrincipalRole($user, $requestedIds);
+                if (! $isSuperAdminTarget) {
+                    $roles = $this->assignableRoles()->whereIn('id', $requestedIds);
+                    if ($roles->count() !== count($requestedIds)) {
+                        throw ValidationException::withMessages([
+                            'roleIds' => 'Los roles seleccionados ya no están disponibles.',
+                        ]);
+                    }
+
+                    $this->ensurePrincipalRole($user, $requestedIds);
+                }
 
                 $user->fill([
                     'name' => $validated['name'],
@@ -241,7 +270,10 @@ class UserEdit extends Component
                 }
 
                 $user->save();
-                $user->syncRoles($roles);
+
+                if (! $isSuperAdminTarget) {
+                    $user->syncRoles($roles);
+                }
 
                 return [$user, $emailChanged];
             });
@@ -254,7 +286,7 @@ class UserEdit extends Component
         }
 
         if (! $emailChanged) {
-            session()->flash('success', 'Usuario y roles actualizados correctamente.');
+            session()->flash('success', 'Usuario actualizado correctamente.');
             $this->redirectRoute('users.index');
             return;
         }
@@ -342,10 +374,14 @@ class UserEdit extends Component
 
     public function render(): View
     {
-        $roles = $this->assignableRoles();
+        $user = $this->editableUser();
+        $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
+
+        $roles = $isSuperAdminTarget ? new Collection() : $this->assignableRoles();
         $selectedIds = array_map('intval', $this->roleIds);
 
         return view('livewire.user.user-edit', [
+            'isSuperAdminTarget' => $isSuperAdminTarget,
             'roles' => $roles,
             'selectedRoles' => $roles->filter(
                 fn (Role $role) => in_array((int) $role->id, $selectedIds, true)

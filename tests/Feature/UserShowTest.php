@@ -91,3 +91,13 @@ test('SuperAdmin puede visualizar el usuario ID 1', function () {
     Livewire::actingAs($principal)
         ->test(UserShow::class, ['user' => $principal])->assertHasNoErrors();
 });
+
+test('show del SuperAdmin presenta acceso global sin listado de roles', function () {
+    $principal = User::factory()->create();
+    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
+
+    Livewire::actingAs($principal)
+        ->test(UserShow::class, ['user' => $principal])
+        ->assertSee('Acceso administrativo global')
+        ->assertDontSee('Roles asignados');
+});

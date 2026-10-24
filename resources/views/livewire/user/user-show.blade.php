@@ -93,6 +93,11 @@
             </dl>
         </x-card>
 
+        @if ($isSuperAdminTarget)
+            <x-card shadow>
+                <x-user.super-admin-notice />
+            </x-card>
+        @else
         <x-card title="Roles asignados"
                 subtitle="Roles de autorización asociados a la cuenta"
                 separator shadow>
@@ -115,6 +120,7 @@
                 </p>
             @endif
         </x-card>
+        @endif
     </div>
 
     <x-card title="Información de registro"

@@ -28,6 +28,7 @@ class UserShow extends Component
 
         return view('livewire.user.user-show', [
             'user' => $user,
+            'isSuperAdminTarget' => $user->hasRole('SuperAdmin', 'web'),
             'roles' => $user->roles->where('guard_name', 'web')->sortBy('name'),
         ]);
     }
