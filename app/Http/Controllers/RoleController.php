@@ -43,6 +43,8 @@ class RoleController
             ])
             ->findOrFail($id);
 
+        abort_if($role->name === 'SuperAdmin', 403);
+
         return view('role.show', [
             'title' => 'Ver Rol',
             'role' => $role,
@@ -56,6 +58,8 @@ class RoleController
         $role = Role::query()
             ->where('guard_name', 'web')
             ->findOrFail($id);
+
+        abort_if($role->name === 'SuperAdmin', 403);
 
         return view('role.edit', [
             'title' => 'Editar Rol',

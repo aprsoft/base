@@ -9,6 +9,7 @@ use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 // use PowerComponents\LivewirePowerGrid\Facades\Filter;
 use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
+use PowerComponents\LivewirePowerGrid\Facades\Rule;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use Illuminate\Support\Facades\Route;
@@ -103,15 +104,20 @@ final class RoleTable extends PowerGridComponent
         ];
     }
 
-    /*
-    public function actionRules($row): array
+    /**
+     * Los roles provienen exclusivamente del guard web.
+     * SuperAdmin es visible, pero no ofrece acciones.
+     */
+    public function actionRules(): array
     {
-       return [
-            // Hide button edit for ID 1
+        return [
+            Rule::button('show')
+                ->when(fn ($row) => $row->name === 'SuperAdmin')
+                ->hide(),
+
             Rule::button('edit')
-                ->when(fn($row) => $row->id === 1)
+                ->when(fn ($row) => $row->name === 'SuperAdmin')
                 ->hide(),
         ];
     }
-    */
 }

@@ -80,3 +80,29 @@ test('crear rol asigna permisos del guard web', function () {
 
     expect(Role::findByName('Auditor', 'web')->hasPermissionTo($permission))->toBeTrue();
 });
+
+
+// El rol reservado queda visible en el listado, pero sin acceso
+// a sus pantallas ni a los métodos de edición Livewire.
+test('SuperAdmin permanece listado pero no se puede consultar o editar', function () {
+    $actor = User::factory()->create();
+    $protectedRole = Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']);
+    $actor->assignRole($protectedRole);
+
+    $this->actingAs($actor)->get(route('roles.index'))->assertOk();
+
+    $table = new \App\Livewire\Role\RoleTable();
+    expect($table->datasource()->whereKey($protectedRole->id)->exists())->toBeTrue();
+
+    $this->actingAs($actor)
+        ->get(route('roles.show', $protectedRole->id))
+        ->assertForbidden();
+
+    $this->actingAs($actor)
+        ->get(route('roles.edit', $protectedRole->id))
+        ->assertForbidden();
+
+    Livewire::actingAs($actor)
+        ->test(EditRole::class, ['roleId' => $protectedRole->id])
+        ->assertForbidden();
+});

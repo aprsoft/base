@@ -16,6 +16,15 @@ class EditRole extends Component
         abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
     }
 
+    /**
+     * Esta restricción nunca depende de Gate::before, que autoriza
+     * globalmente a SuperAdmin.
+     */
+    private function ensureEditableRole(Role $role): void
+    {
+        abort_if($role->name === 'SuperAdmin' && $role->guard_name === 'web', 403);
+    }
+
     #[Locked]
     public int $roleId;
 
@@ -35,6 +44,8 @@ class EditRole extends Component
             ])
             ->findOrFail($roleId);
 
+        $this->ensureEditableRole($role);
+
         $this->roleId = $role->id;
         $this->role = $role->name;
 
@@ -52,6 +63,8 @@ class EditRole extends Component
         $role = Role::query()
             ->where('guard_name', 'web')
             ->findOrFail($this->roleId);
+
+        $this->ensureEditableRole($role);
 
         $validated = $this->validate([
             'role' => [
@@ -115,6 +128,11 @@ class EditRole extends Component
     public function render()
     {
         $this->authorizeManagement();
+
+        $role = Role::query()
+            ->where('guard_name', 'web')
+            ->findOrFail($this->roleId);
+        $this->ensureEditableRole($role);
 
         $permissions = Permission::query()
             ->where('guard_name', 'web')
