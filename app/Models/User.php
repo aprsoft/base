@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -17,9 +16,14 @@ class User extends Authenticatable
     use HasRoles;
 
     /**
-     * The attributes that are mass assignable.
+     * Identificador de la cuenta principal del sistema.
+     */
+    public const PRIMARY_SUPER_ADMIN_KEY = 'primary_superadmin';
+
+    /**
+     * Atributos que admiten asignación masiva.
      *
-     * @var list<string>
+     * system_account_key está excluido intencionalmente.
      */
     protected $fillable = [
         'name',
@@ -28,9 +32,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Atributos ocultos durante la serialización.
      */
     protected $hidden = [
         'password',
@@ -38,9 +40,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Conversión de atributos.
      */
     protected function casts(): array
     {
@@ -51,13 +51,25 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's initials
+     * Determina si el usuario es el SuperAdmin principal.
+     */
+    public function isPrimarySuperAdmin(): bool
+    {
+        return $this->system_account_key
+            === self::PRIMARY_SUPER_ADMIN_KEY;
+    }
+
+    /**
+     * Obtiene las iniciales del usuario.
      */
     public function initials(): string
     {
         return Str::of($this->name)
             ->explode(' ')
-            ->map(fn (string $name) => Str::of($name)->substr(0, 1))
+            ->map(
+                fn (string $name) =>
+                    Str::of($name)->substr(0, 1)
+            )
             ->implode('');
     }
 }

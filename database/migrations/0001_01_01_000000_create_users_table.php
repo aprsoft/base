@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
+            $table->string('system_account_key', 64)->nullable()->unique();
             $table->timestamps();
             $table->softDeletes();
         });
