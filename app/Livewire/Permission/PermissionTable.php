@@ -4,6 +4,7 @@ namespace App\Livewire\Permission;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\On;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
@@ -39,7 +40,7 @@ final class PermissionTable extends PowerGridComponent
 
     public function datasource(): Builder
     {
-        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+        Gate::authorize('viewAny', Permission::class);
 
         return Permission::query()
             ->where('guard_name', 'web');
@@ -81,7 +82,9 @@ final class PermissionTable extends PowerGridComponent
         ErrorLogger $errorLogger,
         int $id
     ): void {
-        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+        Gate::authorize('viewAny', Permission::class);
+
+        Gate::authorize('delete', Permission::query()->where('guard_name', 'web')->findOrFail($id));
 
         try {
             $permissionName = $deletePermission->delete($id);
@@ -146,7 +149,9 @@ final class PermissionTable extends PowerGridComponent
             return [];
         }
 
-        return [
+        $buttons = [];
+        if (Gate::allows('view', $row)) {
+            $buttons[] =
             Button::add('show')
                 ->icon('default-eye')
                 ->class(
@@ -156,7 +161,10 @@ final class PermissionTable extends PowerGridComponent
                 ->route(
                     'permissions.show',
                     ['permission' => $row->id]
-                ),
+                );
+        }
+        if (Gate::allows('update', $row)) {
+            $buttons[] =
 
             Button::add('edit')
                 ->icon('default-pencil')
@@ -167,7 +175,10 @@ final class PermissionTable extends PowerGridComponent
                 ->route(
                     'permissions.edit',
                     ['permission' => $row->id]
-                ),
+                );
+        }
+        if (Gate::allows('delete', $row)) {
+            $buttons[] =
 
             Button::add('destroy')
                 ->icon('default-trash')
@@ -185,8 +196,9 @@ final class PermissionTable extends PowerGridComponent
                         'message' => '¿Está seguro de que desea eliminar este permiso?',
                         'warning' => 'Esta acción no se puede deshacer.',
                     ]
-                ),
-        ];
+                );
+        }
+        return $buttons;
     }
 
     private function isRoleForm(): bool
