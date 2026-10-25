@@ -49,6 +49,7 @@ class ProfileController extends Controller
         return to_route('settings.profile.edit')->with('status', __('Profile updated successfully'));
     }
 
+    /* Autoeliminación deshabilitada en BASE.
     public function destroy(Request $request): RedirectResponse
     {   
  
@@ -64,4 +65,6 @@ class ProfileController extends Controller
 
         return to_route('home');
     }
+    */
+
 }
