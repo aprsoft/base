@@ -65,7 +65,7 @@ class AdminRolePermissionSeeder extends Seeder
             // profile
             'profile.view',
             'profile.update',
-            'profile.delete',
+            // 'profile.delete', // Autoeliminación deshabilitada en BASE.
             'profile.changePassword',
 
             // Registros de errores (no asignados por defecto a Admin)
