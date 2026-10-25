@@ -4,17 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Gate;
 
 class PermissionController
 {
-    private function authorizeManagement(): void
-    {
-        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
-    }
 
     public function index()
     {
-        $this->authorizeManagement();
+        Gate::authorize('viewAny', Permission::class);
 
         return view('permission.index', [
             'title' => 'Permisos',
@@ -23,7 +20,7 @@ class PermissionController
  
     public function create()
     {
-        $this->authorizeManagement();
+        Gate::authorize('create', Permission::class);
 
         return view('permission.create', [
             'title' => 'Crear Permiso',
@@ -32,13 +29,11 @@ class PermissionController
 
     public function store(Request $request)
     {
-        //
+        abort(405);
     }
 
     public function show(string $id)
     {
-        $this->authorizeManagement();
-
         $permission = Permission::query()
             ->where('guard_name', 'web')
             ->with([
@@ -48,6 +43,8 @@ class PermissionController
             ])
             ->findOrFail($id);
 
+        Gate::authorize('view', $permission);
+
         return view('permission.show', [
             'title' => 'Ver Permiso',
             'permission' => $permission,
@@ -56,11 +53,11 @@ class PermissionController
 
     public function edit(string $id)
     {
-        $this->authorizeManagement();
-
         $permission = Permission::query()
             ->where('guard_name', 'web')
             ->findOrFail($id);
+
+        Gate::authorize('update', $permission);
 
         return view('permission.edit', [
             'title' => 'Editar Permiso',
