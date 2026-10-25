@@ -83,21 +83,31 @@ test('el usuario con ID 1 no puede mostrarse', function () {
         ->assertForbidden();
 });
 
-test('SuperAdmin puede visualizar el usuario ID 1', function () {
+
+test('ni SuperAdmin puede visualizar administrativamente el usuario ID 1', function () {
     $principal = User::factory()->create();
     $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
 
-    $this->actingAs($principal)->get(route('users.show', $principal))->assertOk();
+    $this->actingAs($principal)->get(route('users.show', $principal))->assertForbidden();
     Livewire::actingAs($principal)
-        ->test(UserShow::class, ['user' => $principal])->assertHasNoErrors();
+        ->test(UserShow::class, ['user' => $principal])->assertForbidden();
 });
 
-test('show del SuperAdmin presenta acceso global sin listado de roles', function () {
-    $principal = User::factory()->create();
-    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
 
-    Livewire::actingAs($principal)
-        ->test(UserShow::class, ['user' => $principal])
+test('la ficha de otro SuperAdmin presenta acceso global sin listado de roles', function () {
+    User::factory()->create(); // Cuenta principal protegida.
+    $role = Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']);
+    $actor = User::factory()->create();
+    $actor->assignRole($role);
+    $target = User::factory()->create();
+    $target->assignRole($role);
+
+    $this->actingAs($actor)
+        ->get(route('users.show', $target))
+        ->assertOk();
+
+    Livewire::actingAs($actor)
+        ->test(UserShow::class, ['user' => $target])
         ->assertSee('Acceso administrativo global')
         ->assertDontSee('Roles asignados');
 });
