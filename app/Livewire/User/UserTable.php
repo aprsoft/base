@@ -40,6 +40,7 @@ final class UserTable extends PowerGridComponent
         $user = auth('web')->user();
 
         return User::withTrashed()
+            ->where('id', '!=', 1)
             ->when(
                 ! $user->hasRole('SuperAdmin', 'web'),
                 fn (Builder $query) => $query
