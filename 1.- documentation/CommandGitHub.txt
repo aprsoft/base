@@ -10,3 +10,12 @@ git -C ~/Proyectos/base status --short --branch
 ** Actualiza la rama desde github
 
 git -C ~/Proyectos/base pull --ff-only origin feature/pdf-documents
+
+
+** Muestra los ultimos 20 commit
+
+git -C ~/Proyectos/base log --oneline --decorate -n 20
+
+** restaura un commits segun su codigo
+
+git restore --source=c0e092c --staged --worktree -- :/

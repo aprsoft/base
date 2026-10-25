@@ -15,7 +15,7 @@ class ProfileController extends Controller
 {
     public function edit(Request $request): View
     {
-        Gate::authorize('profile.view');
+        Gate::authorize('profiles.view');
         return view('pages.auth.settings.profile', [
             'user' => $request->user(),
         ]);
@@ -23,7 +23,7 @@ class ProfileController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
-        Gate::authorize('profile.update');
+        Gate::authorize('profiles.update');
         $user = $request->user();
 
         $validated = $request->validate([
@@ -50,8 +50,9 @@ class ProfileController extends Controller
     }
 
     public function destroy(Request $request): RedirectResponse
-    {
-        Gate::authorize('profile.delete');
+    {   
+ 
+        Gate::authorize('profiles.delete');
         $user = $request->user();
 
         Auth::logout();
