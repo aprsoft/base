@@ -6,6 +6,9 @@ use App\Http\Controllers\PdfController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
+use App\Models\ErrorLog;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -46,9 +49,11 @@ Route::middleware(['auth'])->group(function () {
     */
 
     Route::get('roles', [RoleController::class, 'index'])
+        ->middleware('can:viewAny,'.Role::class)
         ->name('roles.index');
 
     Route::get('roles/create', [RoleController::class, 'create'])
+        ->middleware('can:create,'.Role::class)
         ->name('roles.create');
 
     Route::get('roles/{role}/edit', [RoleController::class, 'edit'])
@@ -67,9 +72,11 @@ Route::middleware(['auth'])->group(function () {
     */
 
     Route::get('permissions', [PermissionController::class, 'index'])
+        ->middleware('can:viewAny,'.Permission::class)
         ->name('permissions.index');
 
     Route::get('permissions/create', [PermissionController::class, 'create'])
+        ->middleware('can:create,'.Permission::class)
         ->name('permissions.create');
 
     Route::get('permissions/{permission}/edit', [PermissionController::class, 'edit'])
@@ -84,7 +91,8 @@ Route::middleware(['auth'])->group(function () {
     |--------------------------------------------------------------------------
     */
 
-        Route::get('errors', [ErrorController::class, 'index'])->name('errors.index');
+        Route::get('errors', [ErrorController::class, 'index'])
+            ->middleware('can:viewAny,'.ErrorLog::class)->name('errors.index');
         Route::get('errors/{errorLog}', [ErrorController::class, 'show'])->name('errors.show');
 
 });
