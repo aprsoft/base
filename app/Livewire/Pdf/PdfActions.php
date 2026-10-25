@@ -113,7 +113,7 @@ final class PdfActions extends Component
         app(PdfGenerator::class)->authorize($this->type, $this->recordId, $actor, 'view');
 
         return view('livewire.pdf.pdf-actions', [
-            'canEmail' => $actor->can('users.edit'),
+            'canEmail' => \Illuminate\Support\Facades\Gate::forUser($actor)->allows('update', \App\Models\User::withTrashed()->findOrFail($this->recordId)),
         ]);
     }
 }
