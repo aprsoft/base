@@ -9,28 +9,30 @@ class PermissionPolicy
 {
     public function viewAny(User $actor): bool
     {
-        return $this->isAdministrator($actor);
+        return $this->allowed($actor, 'permissions.index');
     }
 
     public function create(User $actor): bool
     {
-        return $this->isAdministrator($actor);
+        return $this->allowed($actor, 'permissions.create');
     }
 
     public function view(User $actor, Permission $permission): bool
     {
-        return $this->canManage($actor, $permission);
+        return $permission->guard_name === 'web'
+            && $this->allowed($actor, 'permissions.show');
     }
 
     public function update(User $actor, Permission $permission): bool
     {
-        return $this->canManage($actor, $permission);
+        return $permission->guard_name === 'web'
+            && $this->allowed($actor, 'permissions.edit');
     }
 
     public function delete(User $actor, Permission $permission): bool
     {
-        // El servicio existente sigue verificando asignaciones activas.
-        return $this->canManage($actor, $permission);
+        return $permission->guard_name === 'web'
+            && $this->allowed($actor, 'permissions.destroy');
     }
 
     public function forceDelete(User $actor, Permission $permission): bool
@@ -38,13 +40,8 @@ class PermissionPolicy
         return false;
     }
 
-    private function isAdministrator(User $actor): bool
+    private function allowed(User $actor, string $permission): bool
     {
-        return $actor->hasRole('SuperAdmin', 'web');
-    }
-
-    private function canManage(User $actor, Permission $permission): bool
-    {
-        return $this->isAdministrator($actor) && $permission->guard_name === 'web';
+        return $actor->hasRole('SuperAdmin', 'web') || $actor->can($permission);
     }
 }
