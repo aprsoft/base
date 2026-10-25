@@ -174,16 +174,29 @@ test('un correo manipulado sin activar la casilla no cambia destinatario', funct
     );
 });
 
-test('SuperAdmin puede descargar el PDF del usuario ID 1', function () {
+
+test('ni SuperAdmin puede descargar el PDF de la cuenta principal ID 1', function () {
     $principal = User::factory()->create();
     $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
     Pdf::fake();
 
     $this->actingAs($principal)->get(route('pdf.download', [
         'type' => 'user.profile', 'record' => $principal->id,
+    ]))->assertForbidden();
+});
+
+test('SuperAdmin puede descargar el PDF de otra cuenta no protegida', function () {
+    $principal = User::factory()->create();
+    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
+    $target = User::factory()->create();
+    Pdf::fake();
+
+    $this->actingAs($principal)->get(route('pdf.download', [
+        'type' => 'user.profile', 'record' => $target->id,
     ]))->assertOk();
+
     Pdf::assertRespondedWithPdf(fn (PdfBuilder $pdf) =>
         $pdf->viewName === 'pdf.users.profile'
-        && $pdf->downloadName === 'usuario-'.$principal->id.'.pdf'
+        && $pdf->downloadName === 'usuario-'.$target->id.'.pdf'
     );
 });
