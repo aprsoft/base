@@ -19,7 +19,8 @@ class ProfileUpdateTest extends TestCase
 
     public function test_profile_information_can_be_updated(): void
     {
-        $user = User::factory()->create();
+        User::factory()->create(); // Cuenta principal protegida (ID 1).
+        $user = User::factory()->create(); // Usuario ordinario (ID 2).
 
         $response = $this
             ->actingAs($user)
@@ -41,7 +42,8 @@ class ProfileUpdateTest extends TestCase
 
     public function test_email_verification_status_is_unchanged_when_email_address_is_unchanged(): void
     {
-        $user = User::factory()->create();
+        User::factory()->create(); // Cuenta principal protegida (ID 1).
+        $user = User::factory()->create(); // Usuario ordinario (ID 2).
 
         $response = $this
             ->actingAs($user)
@@ -59,7 +61,8 @@ class ProfileUpdateTest extends TestCase
 
     public function test_user_can_delete_their_account(): void
     {
-        $user = User::factory()->create();
+        User::factory()->create(); // Cuenta principal protegida (ID 1).
+        $user = User::factory()->create(); // Usuario ordinario (ID 2).
 
         $response = $this
             ->actingAs($user)
