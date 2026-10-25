@@ -3,6 +3,7 @@
 namespace App\Livewire\User;
 
 use App\Models\User;
+use App\Services\User\UserLifecycleService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -330,6 +331,33 @@ class UserEdit extends Component
         $this->redirectRoute('users.edit', ['user' => $user->id]);
     }
 
+    public function confirmSuspend(): void
+    {
+        $user = $this->editableUser();
+        Gate::authorize('suspend', $user);
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $user->id,
+            name: $user->name,
+            confirmEvent: 'user-edit-suspend-confirmed',
+            title: 'Suspender usuario',
+            message: '¿Confirmas que deseas suspender el acceso de esta cuenta?',
+            warning: 'La cuenta se conservará y podrá restaurarse desde el listado de usuarios.',
+            confirmLabel: 'Sí, suspender'
+        );
+    }
+
+    #[On('user-edit-suspend-confirmed')]
+    public function suspend(int $id, UserLifecycleService $lifecycle): void
+    {
+        abort_unless($id === $this->userId, 403);
+        $lifecycle->suspend(auth('web')->user(), $this->userId);
+
+        session()->flash('success', 'Usuario suspendido correctamente.');
+        $this->redirectRoute('users.index');
+    }
+
     public function confirmResetPassword(): void
     {
         $user = $this->editableUser();
@@ -398,6 +426,8 @@ class UserEdit extends Component
         $selectedIds = array_map('intval', $this->roleIds);
 
         return view('livewire.user.user-edit', [
+            'canSuspend' => Gate::allows('suspend', $user),
+            'canDelete' => Gate::allows('delete', $user),
             'isSuperAdminTarget' => $isSuperAdminTarget,
             'roles' => $roles,
             'selectedRoles' => $roles->filter(
