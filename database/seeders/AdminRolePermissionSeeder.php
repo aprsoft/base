@@ -67,6 +67,10 @@ class AdminRolePermissionSeeder extends Seeder
             'profiles.update',
             'profiles.delete',
             'profiles.changePassword',
+
+            // Registros de errores (no asignados por defecto a Admin)
+            'errors.index',
+            'errors.show',
         ];
 
         // Crear únicamente los permisos que faltan.
@@ -83,6 +87,9 @@ class AdminRolePermissionSeeder extends Seeder
 
         // Conservar permisos existentes de Admin.
         foreach ($permissions as $permission) {
+            if (in_array($permission, ['errors.index', 'errors.show'], true)) {
+                continue;
+            }
             $admin->givePermissionTo($permission);
         }
 
