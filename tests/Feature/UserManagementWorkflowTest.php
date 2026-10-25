@@ -16,15 +16,16 @@ test('un usuario sin permiso no puede abrir la edición', function () {
     Livewire::actingAs($actor)->test(UserEdit::class, ['user' => $target])->assertForbidden();
 });
 
-test('SuperAdmin puede editar la cuenta principal con ID 1', function () {
+
+test('ni SuperAdmin puede editar administrativamente la cuenta principal ID 1', function () {
     $principal = User::factory()->create();
     $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
 
-    $this->actingAs($principal)->get(route('users.edit', $principal))->assertOk();
+    $this->actingAs($principal)->get(route('users.edit', $principal))->assertForbidden();
 
     Livewire::actingAs($principal)
         ->test(UserEdit::class, ['user' => $principal])
-        ->assertHasNoErrors();
+        ->assertForbidden();
 });
 
 test('el usuario sin SuperAdmin no accede a la cuenta principal', function () {
@@ -48,19 +49,17 @@ test('el usuario sin SuperAdmin no accede a la cuenta principal', function () {
         ->not->toContain($principal->id);
 });
 
-test('la cuenta principal conserva su rol SuperAdmin', function () {
-    $principal = User::factory()->create();
-    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
-    $adminRole = Role::create(['name' => 'Admin', 'guard_name' => 'web']);
 
-    Livewire::actingAs($principal)
+test('la cuenta principal conserva su rol SuperAdmin al bloquear la edición', function () {
+    $principal = User::factory()->create();
+    $role = Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']);
+    $principal->assignRole($role);
+    $actor = User::factory()->create();
+    $actor->assignRole($role);
+
+    Livewire::actingAs($actor)
         ->test(UserEdit::class, ['user' => $principal])
-        ->assertSee('Acceso administrativo global')
-        ->assertDontSee('Roles disponibles')
-        ->set('roleIds', [$adminRole->id])
-        ->call('confirmSave')
-        ->assertHasNoErrors()
-        ->assertNotDispatched('open-confirm-modal');
+        ->assertForbidden();
 
     expect($principal->fresh()->hasRole('SuperAdmin', 'web'))->toBeTrue();
 });
@@ -104,22 +103,27 @@ test('cambiar correo actualiza roles y solicita un enlace al correo nuevo', func
     Notification::assertSentTo($target, ResetPassword::class);
 });
 
-test('editar SuperAdmin conserva roles aun con roleIds manipulados', function () {
-    $principal = User::factory()->create();
-    $principal->assignRole(Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']));
+
+test('editar otro SuperAdmin conserva sus roles aun con roleIds manipulados', function () {
+    User::factory()->create(); // Cuenta principal protegida.
+    $role = Role::create(['name' => 'SuperAdmin', 'guard_name' => 'web']);
+    $actor = User::factory()->create();
+    $actor->assignRole($role);
+    $target = User::factory()->create();
+    $target->assignRole($role);
     $otherRole = Role::create(['name' => 'Admin', 'guard_name' => 'web']);
 
-    Livewire::actingAs($principal)
-        ->test(UserEdit::class, ['user' => $principal])
+    Livewire::actingAs($actor)
+        ->test(UserEdit::class, ['user' => $target])
         ->set('name', 'SuperAdministrador Actualizado')
         ->set('roleIds', [$otherRole->id])
         ->call('confirmSave')
         ->assertDispatched('open-confirm-modal')
-        ->call('save', $principal->id)
+        ->call('save', $target->id)
         ->assertHasNoErrors();
 
-    $principal->refresh();
-    expect($principal->name)->toBe('SuperAdministrador Actualizado')
-        ->and($principal->hasRole('SuperAdmin', 'web'))->toBeTrue()
-        ->and($principal->hasRole('Admin', 'web'))->toBeFalse();
+    $target->refresh();
+    expect($target->name)->toBe('SuperAdministrador Actualizado')
+        ->and($target->hasRole('SuperAdmin', 'web'))->toBeTrue()
+        ->and($target->hasRole('Admin', 'web'))->toBeFalse();
 });
