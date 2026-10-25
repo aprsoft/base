@@ -7,6 +7,7 @@ use App\Services\Permission\UpdatePermissionService;
 use DomainException;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\Attributes\Locked;
@@ -17,7 +18,7 @@ class EditPermission extends Component
 {
     private function authorizeManagement(): void
     {
-        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+        Gate::authorize('viewAny', Permission::class);
     }
 
     #[Locked]
@@ -33,6 +34,7 @@ class EditPermission extends Component
             ->where('guard_name', 'web')
             ->findOrFail($permissionId);
 
+        Gate::authorize('update', $permission);
         $this->permissionId = $permission->id;
         $this->permission = $permission->name;
     }
@@ -42,6 +44,8 @@ class EditPermission extends Component
         ErrorLogger $errorLogger
     ) {
         $this->authorizeManagement();
+
+        Gate::authorize('update', Permission::query()->where('guard_name', 'web')->findOrFail($this->permissionId));
 
         try {
             $this->permission = trim($this->permission);
@@ -151,6 +155,7 @@ class EditPermission extends Component
     public function render()
     {
         $this->authorizeManagement();
+        Gate::authorize('update', Permission::query()->where('guard_name', 'web')->findOrFail($this->permissionId));
 
         return view('livewire.permission.edit-permission');
     }
