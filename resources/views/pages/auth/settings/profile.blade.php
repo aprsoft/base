@@ -57,6 +57,7 @@
 
         @endcan
 
+        {{-- Autoeliminación deshabilitada en BASE; conservar para reutilización.
         @can('profile.delete')
         <!-- Delete Account Section -->
         <div class="mt-8 border-t border-gray-200 pt-8 dark:border-gray-700">
@@ -78,5 +79,6 @@
             </form>
         </div>
         @endcan
+        --}}
     </x-layouts.settings>
 @endsection
