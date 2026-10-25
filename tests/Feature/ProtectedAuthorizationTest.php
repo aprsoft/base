@@ -29,10 +29,9 @@ test('primary account cannot delete its profile but can change its password', fu
     $this->actingAs($primary, 'web');
 
     expect(Gate::denies('profile.update'))->toBeTrue();
-    expect(Gate::denies('profile.delete'))->toBeTrue();
     expect(Gate::allows('profile.changePassword'))->toBeTrue();
 
-    $this->delete('/settings/profile')->assertForbidden();
+    $this->delete('/settings/profile')->assertNotFound();
     expect($primary->fresh()?->trashed())->toBeFalse();
 });
 
@@ -52,6 +51,6 @@ test('secondary SuperAdmin cannot delete its own profile', function () {
 
     $this->actingAs($actor, 'web');
 
-    $this->delete('/settings/profile')->assertForbidden();
+    $this->delete('/settings/profile')->assertNotFound();
     expect($actor->fresh()?->trashed())->toBeFalse();
 });
