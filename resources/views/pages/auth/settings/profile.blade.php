@@ -48,16 +48,13 @@
 
             <!-- Save Button -->
             <div>
-                @can('profile.update', $user)
-                    <x-ui.button type="submit" variant="primary">
-                        {{ __('Save') }}
-                    </x-ui.button>
-                @endcan
+                <x-ui.button type="submit" variant="primary">
+                    {{ __('Save') }}
+                </x-ui.button>
             </div>
         </form>
 
         <!-- Delete Account Section -->
-        @can('profile.delete', $user)
         <div class="mt-8 border-t border-gray-200 pt-8 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('Delete account') }}</h3>
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">{{ __('Delete your account and all of its resources') }}</p>
@@ -67,17 +64,14 @@
                   onsubmit="return confirm(this.dataset.confirm);">
                 @csrf
                 @method('DELETE')
-                
-                    <x-ui.button
-                        type="submit"
-                        variant="primary"
-                        className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
-                    >
-                        {{ __('Delete account') }}
-                    </x-ui.button>
-                
+                <x-ui.button
+                    type="submit"
+                    variant="primary"
+                    className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+                >
+                    {{ __('Delete account') }}
+                </x-ui.button>
             </form>
         </div>
-        @endcan
     </x-layouts.settings>
 @endsection

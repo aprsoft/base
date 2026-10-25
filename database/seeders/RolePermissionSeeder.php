@@ -11,67 +11,40 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Limpiar caché de permisos antes de ejecutar.
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Crear roles
-        |--------------------------------------------------------------------------
-        */
 
-        $superAdmin = Role::firstOrCreate([
+        Role::create([
             'name' => 'SuperAdmin',
             'guard_name' => 'web',
         ]);
+        
 
-        $admin = Role::firstOrCreate([
+        $role= Role::create([
             'name' => 'Admin',
             'guard_name' => 'web',
         ]);
 
-        $profileBasic = Role::firstOrCreate([
-            'name' => 'profileBasic',
+        Permission::create([
+            'name' => 'users.index',
             'guard_name' => 'web',
-        ]);
+        ])->syncRoles($role);
 
-        /*
-        |--------------------------------------------------------------------------
-        | SuperAdmin: acceso global mediante Gate::before()
-        |--------------------------------------------------------------------------
-        |
-        | No necesita permisos asignados directamente al rol.
-        | AppServiceProvider concede el acceso global.
-        |
-        */
+        Permission::create([
+            'name' => 'users.create',
+            'guard_name' => 'web',
+        ])->syncRoles($role);
 
-        $superAdmin->syncPermissions([]);
+        Permission::create([
+            'name' => 'users.edit',
+            'guard_name' => 'web',
+        ])->syncRoles($role);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Crear permisos y asignarlos a Admin
-        |--------------------------------------------------------------------------
-        */
+        Permission::create([
+            'name' => 'users.destroy',
+            'guard_name' => 'web',
+        ])->syncRoles($role);
 
-        $permissions = [
-            'users.index',
-            'users.create',
-            'users.edit',
-            'users.destroy',
-            'profile.password.update',
-            'profile.view',
-        ];
-
-        foreach ($permissions as $permissionName) {
-            $permission = Permission::firstOrCreate([
-                'name' => $permissionName,
-                'guard_name' => 'web',
-            ]);
-
-            $admin->givePermissionTo($permission);
-        }
-
-        // Refrescar caché después de configurar permisos.
-        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 }
