@@ -23,6 +23,11 @@ class UserSeeder extends Seeder
             'name' => 'Administrador',            
             'email' => 'admin@aprsoft.cl',
         ])->assignRole('Admin');
+        
+        User::factory()->create([            
+            'name' => 'Ejecutivo',            
+            'email' => 'ejecutivo@aprsoft.cl',
+        ])->assignRole('Executive');
 
         User::factory(9)->create();
 
