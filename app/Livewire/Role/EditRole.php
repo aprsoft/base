@@ -3,6 +3,7 @@
 namespace App\Livewire\Role;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\Attributes\Locked;
@@ -13,7 +14,7 @@ class EditRole extends Component
 {
     private function authorizeManagement(): void
     {
-        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+        Gate::authorize('viewAny', Role::class);
     }
 
     /**
@@ -44,6 +45,7 @@ class EditRole extends Component
             ])
             ->findOrFail($roleId);
 
+        Gate::authorize('update', $role);
         $this->ensureEditableRole($role);
 
         $this->roleId = $role->id;
