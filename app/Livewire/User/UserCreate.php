@@ -28,14 +28,31 @@ class UserCreate extends Component
     // Obtiene todos los roles que existen en la BD
     private function assignableRoles(): Collection
     {
-        return Role::query()
+        $actor = auth('web')->user();
+        abort_unless($actor, 403);
+
+        $roles = Role::query()
             ->where('guard_name', 'web')
-            ->when(
-                ! auth('web')->user()?->hasRole('SuperAdmin', 'web'),
-                fn ($query) => $query->where('name', '!=', 'SuperAdmin')
-            )
             ->orderBy('name')
-            ->get(['id', 'name', 'guard_name']);
+            ->with('permissions')
+            ->get();
+
+        if ($actor->hasRole('SuperAdmin', 'web')) {
+            return $roles;
+        }
+
+        // Una cuenta no puede conceder a terceros permisos que no posee.
+        $allowed = $actor->getAllPermissions()
+            ->where('guard_name', 'web')
+            ->pluck('name')
+            ->all();
+
+        return $roles->filter(
+            fn (Role $role) => $role->name !== 'SuperAdmin'
+                && $role->permissions->every(
+                    fn ($permission) => in_array($permission->name, $allowed, true)
+                )
+        )->values();
     }
 
     protected function rules(): array
