@@ -63,18 +63,6 @@
                     </div>
                 </div>
 
-                {{-- Encabezado anterior, conservado como referencia
-                <div class="mb-4 flex items-center gap-2">
-                    <x-icon
-                        name="o-user-circle"
-                        class="size-5 text-primary"
-                    />
-
-                    <h3 class="font-semibold text-base-content">
-                        Datos del usuario
-                    </h3>
-                </div>
-                --}}
 
                 <div class="space-y-3">
 
