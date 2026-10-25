@@ -3,6 +3,7 @@
 namespace App\Livewire\Permission;
 
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 
@@ -10,7 +11,7 @@ class CreatePermission extends Component
 {
     private function authorizeManagement(): void
     {
-        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+        Gate::authorize('create', Permission::class);
     }
 
     public string $permission = '';
