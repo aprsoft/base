@@ -3,18 +3,15 @@
 namespace App\Http\Controllers;
 
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Gate;
 
 class RoleController
 {
-    private function authorizeManagement(): void
-    {
-        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
-    }
 
     
     public function index()
     {
-        $this->authorizeManagement();
+        Gate::authorize('viewAny', Role::class);
 
         return view('role.index', [
             'title' => 'Roles',
@@ -23,7 +20,7 @@ class RoleController
  
     public function create()
     {
-        $this->authorizeManagement();
+        Gate::authorize('create', Role::class);
 
         return view('role.create', [
             'title' => 'Crear Rol',
@@ -32,8 +29,6 @@ class RoleController
   
     public function show(string $id)
     {
-        $this->authorizeManagement();
-
         $role = Role::query()
             ->where('guard_name', 'web')
             ->with([
@@ -43,7 +38,7 @@ class RoleController
             ])
             ->findOrFail($id);
 
-        abort_if($role->name === 'SuperAdmin', 403);
+        Gate::authorize('view', $role);
 
         return view('role.show', [
             'title' => 'Ver Rol',
@@ -53,13 +48,11 @@ class RoleController
  
     public function edit(string $id)
     {
-        $this->authorizeManagement();
-
         $role = Role::query()
             ->where('guard_name', 'web')
             ->findOrFail($id);
 
-        abort_if($role->name === 'SuperAdmin', 403);
+        Gate::authorize('update', $role);
 
         return view('role.edit', [
             'title' => 'Editar Rol',
