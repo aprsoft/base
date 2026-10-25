@@ -11,6 +11,7 @@ use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use Illuminate\Support\Str;
 use App\Models\ErrorLog;
+use Illuminate\Support\Facades\Gate;
 
 final class ErrorLogTable extends PowerGridComponent
 {
@@ -30,6 +31,7 @@ final class ErrorLogTable extends PowerGridComponent
 
     public function datasource(): Builder
     {
+        Gate::authorize('viewAny', ErrorLog::class);
         return ErrorLog::query()
             ->orderByDesc('created_at');
     }
