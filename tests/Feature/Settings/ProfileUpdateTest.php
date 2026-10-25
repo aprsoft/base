@@ -59,20 +59,19 @@ class ProfileUpdateTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
-    public function test_user_can_delete_their_account(): void
+    public function test_user_cannot_delete_their_account_from_profile(): void
     {
         User::factory()->create(); // Cuenta principal protegida (ID 1).
         $user = User::factory()->create(); // Usuario ordinario (ID 2).
 
-        $response = $this
-            ->actingAs($user)
-            ->delete('/settings/profile');
+        $this->actingAs($user)
+            ->delete('/settings/profile')
+            ->assertNotFound();
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/');
-
-        $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseHas('users', [
+            'id' => $user->id,
+            'deleted_at' => null,
+        ]);
     }
 }
