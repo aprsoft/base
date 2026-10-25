@@ -3,6 +3,7 @@
 namespace App\Livewire\Role;
 
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Gate;
 // use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use PowerComponents\LivewirePowerGrid\Button;
@@ -44,7 +45,7 @@ final class RoleTable extends PowerGridComponent
 
     public function datasource(): Builder
     {
-        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+        Gate::authorize('viewAny', Role::class);
 
         return Role::query()->where('guard_name', 'web');
     }
@@ -85,23 +86,28 @@ final class RoleTable extends PowerGridComponent
 
     public function actions(Role $row): array
     {
-        return [
+        $buttons = [];
+        if (Gate::allows('view', $row)) {
+            $buttons[] =
             Button::add('show')
                 ->icon('default-eye')
                 ->class(
                     'px-2 py-1 bg-green-600 text-white rounded ' .
                     'hover:bg-green-700 flex items-center justify-center'
                 )
-                ->route('roles.show', ['role' => $row->id]),
+                ->route('roles.show', ['role' => $row->id]);
 
-            Button::add('edit')
+        }
+        if (Gate::allows('update', $row)) {
+            $buttons[] = Button::add('edit')
                 ->icon('default-pencil')
                 ->class(
                     'px-2 py-1 bg-gray-600 text-white rounded ' .
                     'hover:bg-gray-700 flex items-center justify-center'
                 )
-                ->route('roles.edit', ['role' => $row->id])
-        ];
+                ->route('roles.edit', ['role' => $row->id]);
+        }
+        return $buttons;
     }
 
     /**
