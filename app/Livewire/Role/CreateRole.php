@@ -3,6 +3,7 @@
 namespace App\Livewire\Role;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Spatie\Permission\Models\Permission;
@@ -12,7 +13,7 @@ class CreateRole extends Component
 {
     private function authorizeManagement(): void
     {
-        abort_unless(auth('web')->user()?->hasRole('SuperAdmin', 'web'), 403);
+        Gate::authorize('create', Role::class);
     }
 
     public string $role = '';
