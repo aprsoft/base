@@ -2,7 +2,9 @@
 
 namespace App\Livewire\User;
 
-use App\Models\user;
+use App\Models\User;
+use App\Services\User\UserLifecycleService;
+use Livewire\Attributes\On;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
@@ -131,7 +133,40 @@ final class UserTable extends PowerGridComponent
                 ->route('users.edit', ['user' => $row->id]);
         }
 
+        if (Gate::allows('restore', $row)) {
+            $buttons[] = Button::add('restore')
+                ->slot('Restaurar')
+                ->class('px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700')
+                ->dispatch('user-table-request-restore', ['id' => (int) $row->id]);
+        }
+
         return $buttons;
+    }
+
+    #[On('user-table-request-restore')]
+    public function confirmRestore(int $id): void
+    {
+        $user = User::withTrashed()->findOrFail($id);
+        Gate::authorize('restore', $user);
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $user->id,
+            name: $user->name,
+            confirmEvent: 'user-table-restore-confirmed',
+            title: 'Restaurar usuario',
+            message: '¿Confirmas que deseas restaurar el acceso de esta cuenta?',
+            warning: 'La cuenta recuperará sus roles y permisos anteriores.',
+            confirmLabel: 'Sí, restaurar'
+        );
+    }
+
+    #[On('user-table-restore-confirmed')]
+    public function restore(int $id, UserLifecycleService $lifecycle): void
+    {
+        $lifecycle->restore(auth('web')->user(), $id);
+        session()->flash('success', 'Usuario restaurado correctamente.');
+        $this->redirectRoute('users.index');
     }
 
     /*
