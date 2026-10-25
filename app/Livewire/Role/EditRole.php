@@ -29,6 +29,21 @@ class EditRole extends Component
     #[Locked]
     public int $roleId;
 
+    private function assignablePermissions()
+    {
+        $actor = auth('web')->user();
+        abort_unless($actor, 403);
+
+        $query = Permission::query()->where('guard_name', 'web');
+
+        if (! $actor->hasRole('SuperAdmin', 'web')) {
+            $query->whereIn('name', $actor->getAllPermissions()
+                ->where('guard_name', 'web')->pluck('name')->all());
+        }
+
+        return $query->orderBy('name')->get();
+    }
+
     public string $role = '';
 
     public array $permissionIds = [];
@@ -100,10 +115,8 @@ class EditRole extends Component
             'permissionIds.min' => 'Debes seleccionar al menos un permiso.',
         ]);
 
-        $permissions = Permission::query()
-            ->where('guard_name', 'web')
-            ->whereIn('id', $validated['permissionIds'])
-            ->get();
+        $permissions = $this->assignablePermissions()
+            ->whereIn('id', $validated['permissionIds']);
 
         if ($permissions->count() !== count($validated['permissionIds'])) {
             $this->addError(
@@ -136,10 +149,7 @@ class EditRole extends Component
             ->findOrFail($this->roleId);
         $this->ensureEditableRole($role);
 
-        $permissions = Permission::query()
-            ->where('guard_name', 'web')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $permissions = $this->assignablePermissions();
 
         $selectedPermissions = $permissions
             ->filter(
