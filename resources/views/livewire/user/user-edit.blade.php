@@ -36,6 +36,34 @@
             {{-- Datos del usuario --}}
             <x-card id="edit-user-data" shadow class="!p-4">
 
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <x-icon name="o-user-circle" class="size-5 text-primary" />
+                        <h3 class="font-semibold text-base-content">Datos del usuario</h3>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        @if ($canSuspend)
+                            <x-button
+                                label="Suspender"
+                                icon="o-no-symbol"
+                                type="button"
+                                wire:click="confirmSuspend"
+                                spinner="confirmSuspend"
+                                class="btn-error btn-sm"
+                            />
+                        @endif
+
+                        {{-- El borrado definitivo permanece bloqueado por UserPolicy::delete().
+                             Se habilitará únicamente después de auditar las relaciones de datos.
+                             @if ($canDelete)
+                                 <x-button label="Eliminar" type="button" class="btn-error btn-sm" />
+                             @endif
+                        --}}
+                    </div>
+                </div>
+
+                {{-- Encabezado anterior, conservado como referencia
                 <div class="mb-4 flex items-center gap-2">
                     <x-icon
                         name="o-user-circle"
@@ -46,6 +74,7 @@
                         Datos del usuario
                     </h3>
                 </div>
+                --}}
 
                 <div class="space-y-3">
 
