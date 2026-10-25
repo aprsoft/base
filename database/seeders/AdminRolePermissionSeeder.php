@@ -63,10 +63,10 @@ class AdminRolePermissionSeeder extends Seeder
             'permissions.destroy',
 
             // profile
-            'profiles.view',
-            'profiles.update',
-            'profiles.delete',
-            'profiles.changePassword',
+            'profile.view',
+            'profile.update',
+            'profile.delete',
+            'profile.changePassword',
 
             // Registros de errores (no asignados por defecto a Admin)
             'errors.index',
