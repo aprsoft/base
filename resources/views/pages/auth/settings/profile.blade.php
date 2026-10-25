@@ -19,6 +19,7 @@
             </div>
         @endif
 
+        @can('profile.update')
         <form method="POST" action="{{ route('settings.profile.update') }}" class="space-y-6">
             @csrf
             @method('PUT')
@@ -54,6 +55,9 @@
             </div>
         </form>
 
+        @endcan
+
+        @can('profile.delete')
         <!-- Delete Account Section -->
         <div class="mt-8 border-t border-gray-200 pt-8 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('Delete account') }}</h3>
@@ -73,5 +77,6 @@
                 </x-ui.button>
             </form>
         </div>
+        @endcan
     </x-layouts.settings>
 @endsection
