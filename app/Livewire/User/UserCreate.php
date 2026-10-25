@@ -3,6 +3,7 @@
 namespace App\Livewire\User;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use App\Services\ErrorLog\ErrorLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -86,7 +87,8 @@ class UserCreate extends Component
     ];
 
     public function confirmSave(): void
-    {       
+    {
+        Gate::authorize('create', User::class);       
 
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));
@@ -141,7 +143,8 @@ class UserCreate extends Component
 
     #[\Livewire\Attributes\On('user-create-save-confirmed')]
     public function save(int $id, ErrorLogger $errorLogger)
-    {      
+    {
+        Gate::authorize('create', User::class);      
 
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));
@@ -295,7 +298,7 @@ class UserCreate extends Component
 
     public function render(): View
     {
-        $roles = $this->assignableRoles();
+        Gate::authorize('create', User::class);        $roles = $this->assignableRoles();
 
         $selectedIds = array_map('intval', $this->roleIds);
 
