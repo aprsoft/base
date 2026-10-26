@@ -73,7 +73,21 @@ final class UserTable extends PowerGridComponent
            /** Example of custom column using a closure **/
             ->add('name_lower', fn (user $model) => strtolower(e($model->name)))
 
-            ->add('email');
+            ->add('email')
+
+            ->add('estado', function ($tenant) {
+            if ($tenant->trashed()) {
+                return '<span class="inline-flex items-center gap-1 text-red-600 font-medium">
+                            <span class="text-lg">✕</span>
+                            Suspendido
+                        </span>';
+            }
+
+            return '<span class="inline-flex items-center gap-1 text-green-600 font-medium">
+                        <span class="text-lg">✓</span>
+                        Activo
+                    </span>';
+            });
             // ->add('created_at_formatted', fn (user $model) => Carbon::parse($model->created_at)->format('d/m/Y H:i:s'));
 
             // ->add('email')
@@ -91,6 +105,9 @@ final class UserTable extends PowerGridComponent
             Column::make('Email', 'email')
                 ->sortable()
                 ->searchable(),
+
+            Column::make('Estado', 'estado'),
+
 
             // Column::make('Created at', 'created_at_formatted', 'created_at')
             //     ->sortable()
