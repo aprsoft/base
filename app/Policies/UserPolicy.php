@@ -64,6 +64,13 @@ class UserPolicy
         return false;
     }
 
+    public function manage(User $actor, User $target): bool
+    {
+        return $this->update($actor, $target)
+            || $this->suspend($actor, $target)
+            || $this->restore($actor, $target);
+    }
+
     private function mayManageTarget(User $actor, User $target, string $permission): bool
     {
         if ($target->hasRole('SuperAdmin', 'web') && ! $actor->hasRole('SuperAdmin', 'web')) {

@@ -4,16 +4,17 @@ namespace App\Livewire\User;
 
 use App\Models\User;
 use App\Services\User\UserLifecycleService;
-use Livewire\Attributes\On;
-use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Attributes\On;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 use PowerComponents\LivewirePowerGrid\Facades\Filter;
 use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
-use PowerComponents\LivewirePowerGrid\PowerGridFields;
+use PowerComponents\LivewirePowerGrid\Facades\Rule;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
+use PowerComponents\LivewirePowerGrid\PowerGridFields;
 
 final class UserTable extends PowerGridComponent
 {
@@ -134,30 +135,17 @@ final class UserTable extends PowerGridComponent
 
     public function actions(User $row): array
     {
-        $buttons = [];
-
-        if (Gate::allows('view', $row)) {
-            $buttons[] = Button::add('show')
+        return [
+            Button::add('show')
                 ->icon('default-eye')
-                ->class('px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center')
-                ->route('users.show', ['user' => $row->id]);
-        }
-
-        if (Gate::allows('update', $row)) {
-            $buttons[] = Button::add('edit')
-                ->icon('default-pencil')
-                ->class('px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center justify-center')
-                ->route('users.edit', ['user' => $row->id]);
-        }
-
-        if (Gate::allows('restore', $row)) {
-            $buttons[] = Button::add('restore')
-                ->slot('Restaurar')
                 ->class('px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700')
-                ->dispatch('user-table-request-restore', ['id' => (int) $row->id]);
-        }
+                ->route('users.show', ['user' => $row->id]),
 
-        return $buttons;
+            Button::add('edit')
+                ->icon('default-pencil')
+                ->class('px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700')
+                ->route('users.edit', ['user' => $row->id]),
+        ];
     }
 
     #[On('user-table-request-restore')]
@@ -186,15 +174,20 @@ final class UserTable extends PowerGridComponent
         $this->redirectRoute('users.index');
     }
 
-    /*
-    public function actionRules($row): array
+    public function actionRules(): array
     {
-       return [
-            // Hide button edit for ID 1
+        return [
+            Rule::button('show')
+                ->when(fn (User $row) =>
+                    Gate::denies('view', $row)
+                )
+                ->hide(),
+
             Rule::button('edit')
-                ->when(fn($row) => $row->id === 1)
+                ->when(fn (User $row) =>
+                    Gate::denies('manage', $row)
+                )
                 ->hide(),
         ];
     }
-    */
 }
