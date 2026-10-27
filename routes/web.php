@@ -60,7 +60,7 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('can:viewAny,'.ErrorLog::class)
         ->name('errors.index');
     Route::get('errors/{errorLog}', [ErrorController::class, 'show'])
-        ->middleware('can:view,'.ErrorLog::class)
+        ->middleware('can:view,errorLog')
         ->name('errors.show');
         
 });
