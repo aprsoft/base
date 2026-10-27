@@ -60,8 +60,9 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('can:viewAny,'.ErrorLog::class)
         ->name('errors.index');
     Route::get('errors/{errorLog}', [ErrorController::class, 'show'])
-        ->middleware('can:view,'.ErrorLog::class)->name('errors.show')
+        ->middleware('can:view,'.ErrorLog::class)
         ->name('errors.show');
+        
 });
 
 require __DIR__.'/auth.php';

@@ -39,8 +39,7 @@ final class ErrorLogTable extends PowerGridComponent
     public function fields(): PowerGridFields
     {
         return PowerGrid::fields()
-            ->add('id')
-            ->add('tenant_id')
+            ->add('id')        
             ->add('message_preview', function (ErrorLog $errorLog) {
                 return e(
                     Str::limit(
@@ -69,14 +68,7 @@ final class ErrorLogTable extends PowerGridComponent
         return [
             Column::make('ID', 'id')
                 ->sortable()
-                ->searchable(),
-
-            Column::make(
-                'Inquilino',
-                'tenant_id'
-            )
-                ->sortable()
-                ->searchable(),
+                ->searchable(),            
 
             Column::make(
                 'Mensaje',

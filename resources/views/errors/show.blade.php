@@ -25,7 +25,7 @@
                 <div class="flex items-center gap-3">
 
                     <a
-                        href="{{ route('central.errors.index') }}"
+                        href="{{ route('errors.index') }}"
                         class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]"
                     >
                         Volver
@@ -51,7 +51,7 @@
                     </div>
 
                     {{-- Inquilino --}}
-                    <div>
+                    {{-- <div>
                         <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                             Inquilino   
                         </p>
@@ -59,7 +59,7 @@
                         <p class="text-sm font-medium text-gray-800 dark:text-white/90">
                             {{ $errorLog->tenant_id ?? '-' }}
                         </p>
-                    </div>
+                    </div> --}}
 
                     {{-- Línea --}}
                     <div>
