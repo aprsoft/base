@@ -29,7 +29,8 @@ class UserEdit extends Component
 
     public function mount(User $user): void
     {
-        $this->authorizeTarget($user);
+        // 'manage' permite entrar para restaurar, sin conceder permiso para editar datos.
+        Gate::authorize('manage', $user);
 
         $this->userId = (int) $user->id;
         $this->name = $user->name;
@@ -42,17 +43,26 @@ class UserEdit extends Component
             ->all();
     }
 
-    private function authorizeTarget(User $user): void
+    private function manageableUser(): User
     {
-        Gate::authorize('update', $user);
-        abort_if($user->trashed(), 404);
+        $user = User::withTrashed()->findOrFail($this->userId);
+        Gate::authorize('manage', $user);
+
+        return $user;
     }
 
     private function editableUser(): User
     {
-        $user = User::query()->findOrFail($this->userId);
+        $user = $this->manageableUser();
         $this->authorizeTarget($user);
+
         return $user;
+    }
+
+    private function authorizeTarget(User $user): void
+    {
+        Gate::authorize('update', $user);
+        abort_if($user->trashed(), 404);
     }
 
     private function assignableRoles(): Collection
@@ -70,7 +80,7 @@ class UserEdit extends Component
             return $roles;
         }
 
-        // Una cuenta no puede conceder a terceros permisos que no posee.
+        // No permitir conceder permisos superiores a los del administrador actual.
         $allowed = $actor->getAllPermissions()
             ->where('guard_name', 'web')
             ->pluck('name')
@@ -125,8 +135,7 @@ class UserEdit extends Component
         ]);
 
         if ($isSuperAdminTarget) {
-            // Se ignoran los roleIds manipulados por Livewire.
-            // La lista de roles efectiva proviene exclusivamente de la BD.
+            // Nunca aceptar cambios de roles en cuentas SuperAdmin desde Livewire.
             $validated['roleIds'] = $user->roles
                 ->where('guard_name', 'web')
                 ->pluck('id')
@@ -229,7 +238,8 @@ class UserEdit extends Component
 
         $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
 
-        if (! $user->isDirty() && ($isSuperAdminTarget || ! $this->rolesChanged($user, $validated['roleIds']))) {
+        if (! $user->isDirty()
+            && ($isSuperAdminTarget || ! $this->rolesChanged($user, $validated['roleIds']))) {
             $this->alert('info', 'No hay cambios para guardar.');
             return;
         }
@@ -244,7 +254,7 @@ class UserEdit extends Component
                 ? '¿Confirmas que deseas actualizar los datos de este usuario? Sus roles no cambiarán.'
                 : '¿Confirmas que deseas actualizar los datos y roles de este usuario?',
             warning: $user->isDirty('email')
-                ? 'Cambiar el correo solicitará obligatoriamente un enlace para establecer la contraseña en la nueva dirección.'
+                ? 'Cambiar el correo solicitará un enlace de contraseña a la nueva dirección.'
                 : '',
             confirmLabel: 'Sí, guardar'
         );
@@ -309,31 +319,25 @@ class UserEdit extends Component
             return;
         }
 
-        // El enlace se solicita siempre que cambia el correo.
-        // Si falla el transporte, se conserva el cambio y se advierte para permitir reintentar.
         $status = $this->sendResetLink($user);
 
         if ($status === Password::RESET_LINK_SENT) {
-            session()->flash(
-                'success',
-                'Usuario actualizado. Se solicitó el envío del enlace para establecer la contraseña al nuevo correo.'
-            );
+            session()->flash('success', 'Usuario actualizado. Se solicitó el enlace de contraseña al nuevo correo.');
             $this->redirectRoute('users.index');
             return;
         }
 
-        session()->flash(
-            'warning',
+        session()->flash('warning',
             $status === Password::RESET_THROTTLED
-                ? 'Correo actualizado, pero el enlace está limitado por una solicitud reciente. Podrás reenviarlo más tarde.'
-                : 'Correo actualizado, pero no se pudo solicitar el enlace de contraseña. Reintenta desde esta pantalla.'
+                ? 'Correo actualizado, pero el enlace está limitado por una solicitud reciente.'
+                : 'Correo actualizado, pero no se pudo solicitar el enlace de contraseña.'
         );
         $this->redirectRoute('users.edit', ['user' => $user->id]);
     }
 
     public function confirmSuspend(): void
     {
-        $user = $this->editableUser();
+        $user = $this->manageableUser();
         Gate::authorize('suspend', $user);
 
         $this->dispatch(
@@ -343,7 +347,7 @@ class UserEdit extends Component
             confirmEvent: 'user-edit-suspend-confirmed',
             title: 'Suspender usuario',
             message: '¿Confirmas que deseas suspender el acceso de esta cuenta?',
-            warning: 'La cuenta se conservará y podrá restaurarse desde el listado de usuarios.',
+            warning: 'La cuenta se conserva y podrá restaurarse desde esta ficha.',
             confirmLabel: 'Sí, suspender'
         );
     }
@@ -352,9 +356,38 @@ class UserEdit extends Component
     public function suspend(int $id, UserLifecycleService $lifecycle): void
     {
         abort_unless($id === $this->userId, 403);
+        $this->manageableUser();
         $lifecycle->suspend(auth('web')->user(), $this->userId);
 
         session()->flash('success', 'Usuario suspendido correctamente.');
+        $this->redirectRoute('users.index');
+    }
+
+    public function confirmRestore(): void
+    {
+        $user = $this->manageableUser();
+        Gate::authorize('restore', $user);
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $user->id,
+            name: $user->name,
+            confirmEvent: 'user-edit-restore-confirmed',
+            title: 'Restaurar usuario',
+            message: '¿Confirmas que deseas restaurar el acceso de esta cuenta?',
+            warning: 'El usuario recuperará el acceso y conservará sus roles anteriores.',
+            confirmLabel: 'Sí, restaurar'
+        );
+    }
+
+    #[On('user-edit-restore-confirmed')]
+    public function restore(int $id, UserLifecycleService $lifecycle): void
+    {
+        abort_unless($id === $this->userId, 403);
+        $this->manageableUser();
+        $lifecycle->restore(auth('web')->user(), $this->userId);
+
+        session()->flash('success', 'Usuario restaurado correctamente.');
         $this->redirectRoute('users.index');
     }
 
@@ -419,14 +452,21 @@ class UserEdit extends Component
 
     public function render(): View
     {
-        $user = $this->editableUser();
+        $user = $this->manageableUser();
+        $canUpdate = Gate::allows('update', $user);
         $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
 
-        $roles = $isSuperAdminTarget ? new Collection() : $this->assignableRoles();
+        $roles = ($canUpdate && ! $isSuperAdminTarget)
+            ? $this->assignableRoles()
+            : new Collection();
         $selectedIds = array_map('intval', $this->roleIds);
 
         return view('livewire.user.user-edit', [
+            'user' => $user,
+            'isSuspended' => $user->trashed(),
+            'canUpdate' => $canUpdate,
             'canSuspend' => Gate::allows('suspend', $user),
+            'canRestore' => Gate::allows('restore', $user),
             'canDelete' => Gate::allows('delete', $user),
             'isSuperAdminTarget' => $isSuperAdminTarget,
             'roles' => $roles,

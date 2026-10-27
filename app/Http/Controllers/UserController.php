@@ -27,8 +27,7 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        Gate::authorize('update', $user);
-        abort_if($user->trashed(), 404);
+        Gate::authorize('manage', $user);
         return view('users.edit', compact('user'));
     }
 }
