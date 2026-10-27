@@ -13,7 +13,7 @@ class ErrorLogPolicy
     }
 
     public function view(User $actor, ErrorLog $errorLog): bool
-    {
+    {dd(7);
         return $this->allowed($actor, 'errors.show');
     }
 

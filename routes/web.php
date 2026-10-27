@@ -57,8 +57,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Registro de errores
     Route::get('errors', [ErrorController::class, 'index'])
-        ->middleware('can:viewAny,'.ErrorLog::class)->name('errors.index');
+        ->middleware('can:viewAny,'.ErrorLog::class)
+        ->name('errors.index');
     Route::get('errors/{errorLog}', [ErrorController::class, 'show'])
+        ->middleware('can:view,'.ErrorLog::class)->name('errors.show')
         ->name('errors.show');
 });
 

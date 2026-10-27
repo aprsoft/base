@@ -43,9 +43,10 @@
                                 type="button"
                                 wire:click="confirmSuspend"
                                 spinner="confirmSuspend"
-                                class="btn-sm !border-amber-600 !bg-amber-600 !text-white hover:!bg-amber-700"
+                                class="btn-sm !border-red-600 !bg-red-600 !text-white
+                                    hover:!border-red-700 hover:!bg-red-700"
                             />
-                        @endif
+                                                    @endif
 
                         @if ($canRestore)
                             <x-button

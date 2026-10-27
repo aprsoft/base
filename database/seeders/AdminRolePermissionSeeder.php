@@ -73,6 +73,8 @@ class AdminRolePermissionSeeder extends Seeder
             'errors.show',
         ];
 
+       
+
         // Crear únicamente los permisos que faltan.
         foreach ($permissions as $Permission) {
             Permission::firstOrCreate([
@@ -81,15 +83,14 @@ class AdminRolePermissionSeeder extends Seeder
             ]);
         }
 
+        
+
         // Actualizar caché antes de asignar permisos.
         app(PermissionRegistrar::class)
             ->forgetCachedPermissions();
 
         // Conservar permisos existentes de Admin.
-        foreach ($permissions as $permission) {
-            if (in_array($permission, ['errors.index', 'errors.show'], true)) {
-                continue;
-            }
+        foreach ($permissions as $permission) {    
             $admin->givePermissionTo($permission);
         }
 

@@ -27,7 +27,7 @@ class ExecutiveRolePermissionSeeder extends Seeder
             'users.index',
             'users.create',
             'users.edit',
-            'users.destroy',
+            // 'users.destroy',
             'users.suspend',
             'users.restore',
             

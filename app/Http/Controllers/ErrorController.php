@@ -15,7 +15,7 @@ class ErrorController extends Controller
     }
 
     public function show(ErrorLog $errorLog)
-    {
+    {dd(8);
         Gate::authorize('view', $errorLog);
         return view('errors.show',compact('errorLog'));
     }
