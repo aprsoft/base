@@ -3,7 +3,6 @@
 namespace App\Livewire\User;
 
 use App\Models\User;
-use App\Services\User\UserLifecycleService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +40,197 @@ class UserEdit extends Component
             ->map(fn ($id) => (int) $id)
             ->values()
             ->all();
+    }    
+
+    #[On('user-edit-remove-role-confirmed')]
+    public function removeRole(int $id): void
+    {
+        $user = $this->editableUser();
+        abort_if($user->hasRole('SuperAdmin', 'web'), 403);
+
+        if (! $this->assignableRoles()->contains('id', $id)) {
+            return;
+        }
+
+        $this->roleIds = array_values(array_filter(
+            $this->roleIds,
+            fn ($roleId) => (int) $roleId !== $id
+        ));
+    }
+
+    public function confirmSave(): void
+    {
+        $user = $this->editableUser();
+        $validated = $this->validatedData($user);
+
+        $user->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ]);
+
+        $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
+
+        if (! $user->isDirty()
+            && ($isSuperAdminTarget || ! $this->rolesChanged($user, $validated['roleIds']))) {
+            $this->alert('info', 'No hay cambios para guardar.');
+            return;
+        }
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $user->id,
+            name: $user->name,
+            confirmEvent: 'user-edit-save-confirmed',
+            title: 'Guardar cambios',
+            message: $isSuperAdminTarget
+                ? '¿Confirmas que deseas actualizar los datos de este usuario? Sus roles no cambiarán.'
+                : '¿Confirmas que deseas actualizar los datos y roles de este usuario?',
+            warning: $user->isDirty('email')
+                ? 'Cambiar el correo solicitará un enlace de contraseña a la nueva dirección.'
+                : '',
+            confirmLabel: 'Sí, guardar'
+        );
+    }  
+
+    public function confirmSuspend(): void
+    {
+        $user = $this->manageableUser();
+        Gate::authorize('suspend', $user);
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $user->id,
+            name: $user->name,
+            confirmEvent: 'user-edit-suspend-confirmed',
+            title: 'Suspender usuario',
+            message: '¿Confirmas que deseas suspender el acceso de esta cuenta?',
+            warning: 'La cuenta se conserva y podrá restaurarse desde esta ficha.',
+            confirmLabel: 'Sí, suspender'
+        );
+    }
+
+    #[On('user-edit-suspend-confirmed')]
+    public function suspend(int $id): void
+    {
+        abort_unless($id === $this->userId, 403);
+
+        $actor = auth('web')->user();
+        abort_unless($actor instanceof User, 403);
+
+        DB::transaction(function () use ($actor): void {
+            $target = User::query()
+                ->lockForUpdate()
+                ->findOrFail($this->userId);
+
+            // Reautorizar con el registro bloqueado.
+            Gate::forUser($actor)->authorize('suspend', $target);
+
+            // SoftDeletes: conserva el usuario y sus relaciones.
+            $target->delete();
+        });
+
+        session()->flash('success', 'Usuario suspendido correctamente.');
+        $this->redirectRoute('users.index');
+    }
+
+    public function confirmRestore(): void
+    {
+        $user = $this->manageableUser();
+        Gate::authorize('restore', $user);
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $user->id,
+            name: $user->name,
+            confirmEvent: 'user-edit-restore-confirmed',
+            title: 'Restaurar usuario',
+            message: '¿Confirmas que deseas restaurar el acceso de esta cuenta?',
+            warning: 'El usuario recuperará el acceso y conservará sus roles anteriores.',
+            confirmLabel: 'Sí, restaurar'
+        );
+    }
+
+    #[On('user-edit-restore-confirmed')]
+    public function restore(int $id): void
+    {
+        abort_unless($id === $this->userId, 403);
+
+        $actor = auth('web')->user();
+        abort_unless($actor instanceof User, 403);
+
+        DB::transaction(function () use ($actor): void {
+            $target = User::withTrashed()
+                ->lockForUpdate()
+                ->findOrFail($this->userId);
+
+            // Reautorizar con el registro bloqueado.
+            Gate::forUser($actor)->authorize('restore', $target);
+
+            // Restaurar sin modificar roles ni relaciones.
+            $target->restore();
+        });
+
+        session()->flash('success', 'Usuario restaurado correctamente.');
+        $this->redirectRoute('users.index');
+    }
+
+    public function confirmResetPassword(): void
+    {
+        $user = $this->editableUser();
+
+        if (Str::lower(trim($this->email)) !== $user->email) {
+            $this->addError('email', 'Guarda primero el nuevo correo para enviar el enlace a esa dirección.');
+            return;
+        }
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $user->id,
+            name: $user->name,
+            confirmEvent: 'user-edit-reset-password-confirmed',
+            title: 'Restablecer contraseña',
+            message: '¿Confirmas que deseas enviar un enlace de restablecimiento al correo registrado?',
+            warning: 'El enlace tendrá una vigencia de 60 minutos.',
+            confirmLabel: 'Sí, enviar enlace'
+        );
+    }
+
+    #[On('user-edit-reset-password-confirmed')]
+    public function resetPassword(int $id): void
+    {
+        abort_unless($id === $this->userId, 403);
+
+        $user = $this->editableUser();
+
+        if (Str::lower(trim($this->email)) !== $user->email) {
+            $this->addError('email', 'Guarda primero el correo modificado.');
+            return;
+        }
+
+        $status = $this->sendResetLink($user);
+
+        if ($status === Password::RESET_LINK_SENT) {
+            $this->alert('success', 'Se solicitó el envío del enlace de restablecimiento.');
+        } elseif ($status === Password::RESET_THROTTLED) {
+            $this->alert('warning', 'Ya existe una solicitud reciente. Intenta más tarde.');
+        } else {
+            $this->alert('error', 'No fue posible solicitar el enlace de restablecimiento.');
+        }
+    }
+
+    private function sendResetLink(User $user): ?string
+    {
+        try {
+            return Password::sendResetLink(['email' => $user->email]);
+        } catch (Throwable $exception) {
+            report($exception);
+            return null;
+        }
+    }
+
+    private function alert(string $type, string $message): void
+    {
+        $this->dispatch('app-alert', type: $type, message: $message);
     }
 
     private function manageableUser(): User
@@ -210,56 +400,6 @@ class UserEdit extends Component
         );
     }
 
-    #[On('user-edit-remove-role-confirmed')]
-    public function removeRole(int $id): void
-    {
-        $user = $this->editableUser();
-        abort_if($user->hasRole('SuperAdmin', 'web'), 403);
-
-        if (! $this->assignableRoles()->contains('id', $id)) {
-            return;
-        }
-
-        $this->roleIds = array_values(array_filter(
-            $this->roleIds,
-            fn ($roleId) => (int) $roleId !== $id
-        ));
-    }
-
-    public function confirmSave(): void
-    {
-        $user = $this->editableUser();
-        $validated = $this->validatedData($user);
-
-        $user->fill([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-        ]);
-
-        $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
-
-        if (! $user->isDirty()
-            && ($isSuperAdminTarget || ! $this->rolesChanged($user, $validated['roleIds']))) {
-            $this->alert('info', 'No hay cambios para guardar.');
-            return;
-        }
-
-        $this->dispatch(
-            'open-confirm-modal',
-            id: $user->id,
-            name: $user->name,
-            confirmEvent: 'user-edit-save-confirmed',
-            title: 'Guardar cambios',
-            message: $isSuperAdminTarget
-                ? '¿Confirmas que deseas actualizar los datos de este usuario? Sus roles no cambiarán.'
-                : '¿Confirmas que deseas actualizar los datos y roles de este usuario?',
-            warning: $user->isDirty('email')
-                ? 'Cambiar el correo solicitará un enlace de contraseña a la nueva dirección.'
-                : '',
-            confirmLabel: 'Sí, guardar'
-        );
-    }
-
     #[On('user-edit-save-confirmed')]
     public function save(int $id): void
     {
@@ -333,121 +473,6 @@ class UserEdit extends Component
                 : 'Correo actualizado, pero no se pudo solicitar el enlace de contraseña.'
         );
         $this->redirectRoute('users.edit', ['user' => $user->id]);
-    }
-
-    public function confirmSuspend(): void
-    {
-        $user = $this->manageableUser();
-        Gate::authorize('suspend', $user);
-
-        $this->dispatch(
-            'open-confirm-modal',
-            id: $user->id,
-            name: $user->name,
-            confirmEvent: 'user-edit-suspend-confirmed',
-            title: 'Suspender usuario',
-            message: '¿Confirmas que deseas suspender el acceso de esta cuenta?',
-            warning: 'La cuenta se conserva y podrá restaurarse desde esta ficha.',
-            confirmLabel: 'Sí, suspender'
-        );
-    }
-
-    #[On('user-edit-suspend-confirmed')]
-    public function suspend(int $id, UserLifecycleService $lifecycle): void
-    {
-        abort_unless($id === $this->userId, 403);
-        $this->manageableUser();
-        $lifecycle->suspend(auth('web')->user(), $this->userId);
-
-        session()->flash('success', 'Usuario suspendido correctamente.');
-        $this->redirectRoute('users.index');
-    }
-
-    public function confirmRestore(): void
-    {
-        $user = $this->manageableUser();
-        Gate::authorize('restore', $user);
-
-        $this->dispatch(
-            'open-confirm-modal',
-            id: $user->id,
-            name: $user->name,
-            confirmEvent: 'user-edit-restore-confirmed',
-            title: 'Restaurar usuario',
-            message: '¿Confirmas que deseas restaurar el acceso de esta cuenta?',
-            warning: 'El usuario recuperará el acceso y conservará sus roles anteriores.',
-            confirmLabel: 'Sí, restaurar'
-        );
-    }
-
-    #[On('user-edit-restore-confirmed')]
-    public function restore(int $id, UserLifecycleService $lifecycle): void
-    {
-        abort_unless($id === $this->userId, 403);
-        $this->manageableUser();
-        $lifecycle->restore(auth('web')->user(), $this->userId);
-
-        session()->flash('success', 'Usuario restaurado correctamente.');
-        $this->redirectRoute('users.index');
-    }
-
-    public function confirmResetPassword(): void
-    {
-        $user = $this->editableUser();
-
-        if (Str::lower(trim($this->email)) !== $user->email) {
-            $this->addError('email', 'Guarda primero el nuevo correo para enviar el enlace a esa dirección.');
-            return;
-        }
-
-        $this->dispatch(
-            'open-confirm-modal',
-            id: $user->id,
-            name: $user->name,
-            confirmEvent: 'user-edit-reset-password-confirmed',
-            title: 'Restablecer contraseña',
-            message: '¿Confirmas que deseas enviar un enlace de restablecimiento al correo registrado?',
-            warning: 'El enlace tendrá una vigencia de 60 minutos.',
-            confirmLabel: 'Sí, enviar enlace'
-        );
-    }
-
-    #[On('user-edit-reset-password-confirmed')]
-    public function resetPassword(int $id): void
-    {
-        abort_unless($id === $this->userId, 403);
-
-        $user = $this->editableUser();
-
-        if (Str::lower(trim($this->email)) !== $user->email) {
-            $this->addError('email', 'Guarda primero el correo modificado.');
-            return;
-        }
-
-        $status = $this->sendResetLink($user);
-
-        if ($status === Password::RESET_LINK_SENT) {
-            $this->alert('success', 'Se solicitó el envío del enlace de restablecimiento.');
-        } elseif ($status === Password::RESET_THROTTLED) {
-            $this->alert('warning', 'Ya existe una solicitud reciente. Intenta más tarde.');
-        } else {
-            $this->alert('error', 'No fue posible solicitar el enlace de restablecimiento.');
-        }
-    }
-
-    private function sendResetLink(User $user): ?string
-    {
-        try {
-            return Password::sendResetLink(['email' => $user->email]);
-        } catch (Throwable $exception) {
-            report($exception);
-            return null;
-        }
-    }
-
-    private function alert(string $type, string $message): void
-    {
-        $this->dispatch('app-alert', type: $type, message: $message);
     }
 
     public function render(): View
