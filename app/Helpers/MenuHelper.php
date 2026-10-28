@@ -12,7 +12,7 @@ class MenuHelper
             [
                 'icon' => 'home',
                 'name' => 'Inicio',
-                'path' => route('home', absolute: false),
+                'path' => route('dashboard', absolute: false),
             ],
          
         ];

@@ -14,9 +14,15 @@ class ErrorController extends Controller
         return view('errors.index');
     }
 
-    public function show(ErrorLog $errorLog)
+
+    public function show(int $id)
     {
-        Gate::authorize('view', $errorLog);
-        return view('errors.show',compact('errorLog'));
+        Gate::authorize('errors.show');
+
+        $record = ErrorLog::findOrFail($id);
+
+        Gate::authorize('view', $record);
+
+        return view('errors.show', ['errorLog' => $record]);
     }
 }

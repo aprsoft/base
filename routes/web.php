@@ -59,7 +59,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('errors', [ErrorController::class, 'index'])
         ->middleware('can:viewAny,'.ErrorLog::class)
         ->name('errors.index');
-    Route::get('errors/{errorLog}', [ErrorController::class, 'show'])
+    Route::get('errors/{id}', [ErrorController::class, 'show'])
         ->middleware('can:view,errorLog')
         ->name('errors.show');
         
