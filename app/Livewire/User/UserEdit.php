@@ -449,9 +449,14 @@ class UserEdit extends Component
             throw $exception;
         } catch (Throwable $exception) {
             report($exception);
-            $this->addError('form', 'No fue posible actualizar el usuario. Intenta nuevamente.');
-            return;
-        }
+
+            $this->alert(
+                'error',
+                'No fue posible completar la operación.'
+            );
+        //     $this->addError('form', 'No fue posible actualizar el usuario. Intenta nuevamente.');
+        //     return;
+        // }
 
         if (! $emailChanged) {
             session()->flash('success', 'Usuario actualizado correctamente.');
