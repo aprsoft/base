@@ -456,7 +456,7 @@ class UserEdit extends Component
             );
         //     $this->addError('form', 'No fue posible actualizar el usuario. Intenta nuevamente.');
         //     return;
-        // }
+         }
 
         if (! $emailChanged) {
             session()->flash('success', 'Usuario actualizado correctamente.');
