@@ -20,8 +20,7 @@ final class ErrorLogger
      * el flujo cuando falla la persistencia.
      */
     public function persist(
-        Throwable $exception,
-        array $context = []
+        Throwable $exception,       
     ): void {
         try {
             $file = $exception->getFile();
@@ -40,7 +39,21 @@ final class ErrorLogger
                 'exception' => $exception::class,
                 'file' => $file,
                 'line' => (string) $exception->getLine(),
-                'errors' => $this->safeContext($context) ?: null,
+                'errors' => [
+                    'code' => $exception->getCode(),
+                    'trace' => array_map(
+                        static fn (array $frame): array => [
+                            'file' => isset($frame['file'])
+                                ? basename($frame['file'])
+                                : null,
+                            'line' => $frame['line'] ?? null,
+                            'class' => $frame['class'] ?? null,
+                            'function' => $frame['function'] ?? null,
+                        ],
+                        array_slice($exception->getTrace(), 0, 10)
+                    ),
+                ],
+
             ]);
 
         } catch (Throwable $loggingException) {
