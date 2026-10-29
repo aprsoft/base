@@ -23,11 +23,13 @@
 
     <x-form wire:submit="confirmSave" class="!gap-4">
 
-        @error('form')
-            <div class="rounded-lg bg-error/10 p-3 text-sm text-error">
-                {{ $message }}
-            </div>
-        @enderror
+        @foreach ($errors->get('roleIds.*') as $messages)
+            @foreach ($messages as $message)
+                <p class="mt-1 text-xs text-error">
+                    {{ $message }}
+                </p>
+            @endforeach
+        @endforeach
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
