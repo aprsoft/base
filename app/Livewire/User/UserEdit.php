@@ -421,7 +421,7 @@ class UserEdit extends Component
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
-                'email:rfc',
+                'email:dns',
                 'max:255',
                 Rule::unique(User::class, 'email')->ignore($user->id),
             ],
