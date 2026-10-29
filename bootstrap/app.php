@@ -26,7 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
             app(ErrorLogger::class)->persist($exception);
         });
 
-        // Laravel continúa registrando la excepción
+        // Laravel continúa registrando la excepción  
         // mediante sus canales de logging configurados.
 
     })->create();

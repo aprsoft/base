@@ -70,6 +70,7 @@ test('UserEdit muestra alerta y no guarda cambios cuando falla la actualizacion'
         )
         ->assertNoRedirect();
 
+    dump(["errores_registrados" => \App\Models\ErrorLog::query()->get(["exception", "message"])->toArray()]);
     expect($target->fresh()->name)->toBe('Nombre Original')
         ->and(ErrorLog::query()->where('exception', RuntimeException::class)->count())->toBe(1);
 });
