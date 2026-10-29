@@ -1,9 +1,7 @@
 <?php
 
 use App\Livewire\User\UserEdit;
-use App\Livewire\User\UserTable;
 use App\Models\User;
-use App\Services\User\UserLifecycleService;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
@@ -34,8 +32,7 @@ test('an unauthorized user cannot suspend or restore accounts', function () {
     expect(Gate::denies('suspend', $target))->toBeTrue();
 
     Livewire::actingAs($actor)
-        ->test(UserTable::class)
-        ->call('confirmRestore', $target->id)
+        ->test(UserEdit::class, ['user' => $target])
         ->assertForbidden();
 
     $target->delete();
@@ -43,11 +40,10 @@ test('an unauthorized user cannot suspend or restore accounts', function () {
     expect(Gate::denies('restore', $target))->toBeTrue();
 
     Livewire::actingAs($actor)
-        ->test(UserTable::class)
-        ->call('restore', $target->id)
+        ->test(UserEdit::class, ['user' => $target])
         ->assertForbidden();
 
-    expect($target->fresh()?->trashed())->toBeTrue();
+    expect(User::withTrashed()->findOrFail($target->id)->trashed())->toBeTrue();
 });
 
 test('an authorized operator can suspend an account with confirmation', function () {
@@ -72,8 +68,8 @@ test('an authorized operator can restore a suspended account', function () {
     $target->delete();
 
     Livewire::actingAs($actor)
-        ->test(UserTable::class)
-        ->call('confirmRestore', $target->id)
+        ->test(UserEdit::class, ['user' => $target])
+        ->call('confirmRestore')
         ->assertDispatched('open-confirm-modal')
         ->call('restore', $target->id)
         ->assertHasNoErrors();
@@ -91,8 +87,7 @@ test('the primary and own accounts cannot be suspended', function () {
         ->and(Gate::denies('suspend', $actor))->toBeTrue();
 
     Livewire::actingAs($actor)
-        ->test(UserTable::class)
-        ->call('confirmRestore', $primary->id)
+        ->test(UserEdit::class, ['user' => $primary])
         ->assertForbidden();
 
     expect(User::withTrashed()->findOrFail($primary->id)->trashed())->toBeFalse();
