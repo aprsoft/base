@@ -1,162 +1,204 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Permission;
 
-use App\Services\Central\ErrorLog\ErrorLogger;
-use App\Services\Permission\UpdatePermissionService;
-use DomainException;
 use Illuminate\Database\QueryException;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\ValidationException;
-use Livewire\Component;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\On;
+use Livewire\Component;
 use Spatie\Permission\Models\Permission;
-use Throwable;
 
 class EditPermission extends Component
 {
-    private function authorizeManagement(): void
-    {
-        Gate::authorize('viewAny', Permission::class);
-    }
-
     #[Locked]
     public int $permissionId;
+
+    #[Locked]
+    public ?int $pendingDeleteId = null;
 
     public string $permission = '';
 
     public function mount(int $permissionId): void
     {
-        $this->authorizeManagement();
+        Gate::authorize('viewAny', Permission::class);
 
         $permission = Permission::query()
             ->where('guard_name', 'web')
             ->findOrFail($permissionId);
 
         Gate::authorize('update', $permission);
-        $this->permissionId = $permission->id;
+
+        abort_if($permission->roles()->exists(), 403);
+
+        $this->permissionId = (int) $permission->id;
         $this->permission = $permission->name;
     }
 
-    public function update(
-        UpdatePermissionService $updatePermission,
-        ErrorLogger $errorLogger
-    ) {
-        $this->authorizeManagement();
+    private function editablePermission(): Permission
+    {
+        Gate::authorize('viewAny', Permission::class);
 
-        Gate::authorize('update', Permission::query()->where('guard_name', 'web')->findOrFail($this->permissionId));
+        $permission = Permission::query()
+            ->where('guard_name', 'web')
+            ->findOrFail($this->permissionId);
+
+        Gate::authorize('update', $permission);
+
+        abort_if($permission->roles()->exists(), 403);
+
+        return $permission;
+    }
+
+    public function update()
+    {
+        $this->editablePermission();
+
+        $this->permission = trim($this->permission);
+
+        $validated = $this->validate([
+            'permission' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique(
+                    config('permission.table_names.permissions'),
+                    'name'
+                )
+                    ->where(fn ($query) =>
+                        $query->where('guard_name', 'web')
+                    )
+                    ->ignore($this->permissionId),
+            ],
+        ], [
+            'permission.required' => 'Debes ingresar el nombre del permiso.',
+            'permission.unique' => 'Ya existe un permiso con ese nombre.',
+        ]);
 
         try {
-            $this->permission = trim($this->permission);
+            DB::transaction(function () use ($validated): void {
+                $permission = Permission::query()
+                    ->where('guard_name', 'web')
+                    ->lockForUpdate()
+                    ->findOrFail($this->permissionId);
 
-            $validated = $this->validate([
-                'permission' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    Rule::unique(
-                        config('permission.table_names.permissions'),
-                        'name'
-                    )
-                        ->where(
-                            fn ($query) => $query
-                                ->where('guard_name', 'web')
-                        )
-                        ->ignore($this->permissionId),
-                ],
-            ], [
-                'permission.required' => 'Debes ingresar el nombre del permiso.',
-                'permission.unique' => 'Ya existe un permiso con ese nombre.',
-            ]);
+                Gate::authorize('update', $permission);
 
-            $permissionName = $updatePermission->update(
-                $this->permissionId,
-                $validated['permission']
-            );
+                abort_if($permission->roles()->exists(), 403);
 
-            session()->flash(
-                'success',
-                sprintf(
-                    'El permiso "%s" fue actualizado correctamente.',
-                    $permissionName
-                )
-            );
-
-            return redirect()->route('permissions.index');
-        } catch (ValidationException $exception) {
-            /*
-             * Registramos el error de validación en error_logs,
-             * pero relanzamos la excepción para que Livewire conserve
-             * su comportamiento normal y muestre los errores del formulario.
-             */
-            $errorLogger->report(
-                $exception,
-                [
-                    'operation' => 'permission.update',
-                    'permission_id' => $this->permissionId,
-                    'error_type' => 'validation',
-                    'validation_errors' => $exception->errors(),
-                ]
-            );
-
-            throw $exception;
-        } catch (DomainException $exception) {
-            $errorLogger->report(
-                $exception,
-                [
-                    'operation' => 'permission.update',
-                    'permission_id' => $this->permissionId,
-                    'error_type' => 'business',
-                ]
-            );
-
-            session()->flash(
-                'error',
-                $exception->getMessage()
-            );
-
-            return redirect()->route('permissions.index');
+                $permission->update([
+                    'name' => $validated['permission'],
+                ]);
+            });
         } catch (QueryException $exception) {
-            $errorLogger->report(
-                $exception,
-                [
-                    'operation' => 'permission.update',
-                    'permission_id' => $this->permissionId,
-                    'error_type' => 'database',
-                ]
+            report($exception);
+
+            $this->addError(
+                'permission',
+                'No fue posible actualizar el permiso.'
             );
 
-            session()->flash(
-                'error',
-                'Ocurrió un error de base de datos al actualizar el permiso.'
-            );
-
-            return redirect()->route('permissions.index');
-        } catch (Throwable $exception) {
-            $errorLogger->report(
-                $exception,
-                [
-                    'operation' => 'permission.update',
-                    'permission_id' => $this->permissionId,
-                    'error_type' => 'unexpected',
-                ]
-            );
-
-            session()->flash(
-                'error',
-                'Ocurrió un error inesperado al actualizar el permiso.'
-            );
-
-            return redirect()->route('permissions.index');
+            return;
         }
+
+        session()->flash(
+            'success',
+            'Permiso actualizado correctamente.'
+        );
+
+        return redirect()->route('permissions.index');
+    }
+
+    public function confirmDelete(): void
+    {
+        $permission = $this->editablePermission();
+
+        Gate::authorize('delete', $permission);
+
+        abort_if(
+            $permission->roles()->exists()
+                || $permission->users()->exists(),
+            403
+        );
+
+        $this->pendingDeleteId = (int) $permission->id;
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $permission->id,
+            name: $permission->name,
+            confirmEvent: 'permission-edit-delete-confirmed',
+            title: 'Eliminar permiso',
+            message: '¿Confirmas que deseas eliminar definitivamente este permiso?',
+            warning: 'Esta operación no se puede deshacer.',
+            confirmLabel: 'Sí, eliminar'
+        );
+    }
+
+    #[On('permission-edit-delete-confirmed')]
+    public function delete(int $id): void
+    {
+        abort_unless(
+            $id === $this->permissionId
+                && $id === $this->pendingDeleteId,
+            403
+        );
+
+        $this->pendingDeleteId = null;
+
+        try {
+            $name = DB::transaction(function () use ($id): string {
+                $permission = Permission::query()
+                    ->where('guard_name', 'web')
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                Gate::authorize('update', $permission);
+                Gate::authorize('delete', $permission);
+
+                abort_if(
+                    $permission->roles()->exists()
+                        || $permission->users()->exists(),
+                    403
+                );
+
+                $name = $permission->name;
+
+                $permission->delete();
+
+                return $name;
+            });
+        } catch (QueryException $exception) {
+            report($exception);
+
+            $this->addError(
+                'permission',
+                'No fue posible eliminar el permiso.'
+            );
+
+            return;
+        }
+
+        session()->flash(
+            'success',
+            "El permiso \"{$name}\" fue eliminado correctamente."
+        );
+
+        $this->redirectRoute('permissions.index');
     }
 
     public function render()
     {
-        $this->authorizeManagement();
-        Gate::authorize('update', Permission::query()->where('guard_name', 'web')->findOrFail($this->permissionId));
+        $permission = $this->editablePermission();
 
-        return view('livewire.permission.edit-permission');
+        return view('livewire.permission.edit-permission', [
+            'canDelete' => Gate::allows('delete', $permission)
+                && ! $permission->roles()->exists()
+                && ! $permission->users()->exists(),
+        ]);
     }
 }

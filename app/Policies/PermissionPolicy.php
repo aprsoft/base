@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
 use App\Models\User;
@@ -27,6 +29,7 @@ class PermissionPolicy
     {
         return $permission->guard_name === 'web'
             && ! $this->isSystemPermission($permission)
+            && ! $permission->roles()->exists()
             && $this->allowed($actor, 'permissions.edit');
     }
 
@@ -34,6 +37,8 @@ class PermissionPolicy
     {
         return $permission->guard_name === 'web'
             && ! $this->isSystemPermission($permission)
+            && ! $permission->roles()->exists()
+            && ! $permission->users()->exists()
             && $this->allowed($actor, 'permissions.destroy');
     }
 
@@ -42,9 +47,19 @@ class PermissionPolicy
         return false;
     }
 
+    private function isRelated(Permission $permission, string $relation): bool
+    {
+        $existsAttribute = $relation.'_exists';
+
+        if (array_key_exists($existsAttribute, $permission->getAttributes())) {
+            return (bool) $permission->getAttribute($existsAttribute);
+        }
+
+        return $permission->{$relation}()->exists();
+    }
+
     private function isSystemPermission(Permission $permission): bool
     {
-        // Se protegen los nombres codificados en rutas, policies y navegación.
         return str_starts_with($permission->name, 'users.')
             || str_starts_with($permission->name, 'roles.')
             || str_starts_with($permission->name, 'permissions.')
@@ -55,6 +70,7 @@ class PermissionPolicy
 
     private function allowed(User $actor, string $permission): bool
     {
-        return $actor->hasRole('SuperAdmin', 'web') || $actor->can($permission);
+        return $actor->hasRole('SuperAdmin', 'web')
+            || $actor->can($permission);
     }
 }
