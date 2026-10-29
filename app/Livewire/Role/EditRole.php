@@ -1,98 +1,144 @@
+
 <?php
+
+declare(strict_types=1);
 
 namespace App\Livewire\Role;
 
+use Closure;
+use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Livewire\Component;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
+use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class EditRole extends Component
 {
-    private function authorizeManagement(): void
-    {
-        Gate::authorize('viewAny', Role::class);
-    }
-
-    /**
-     * Esta restricción nunca depende de Gate::before, que autoriza
-     * globalmente a SuperAdmin.
-     */
-    private function ensureEditableRole(Role $role): void
-    {
-        abort_if($role->name === 'SuperAdmin' && $role->guard_name === 'web', 403);
-    }
-
     #[Locked]
     public int $roleId;
-
-    private function assignablePermissions()
-    {
-        $actor = auth('web')->user();
-        abort_unless($actor, 403);
-
-        $query = Permission::query()->where('guard_name', 'web');
-
-        if (! $actor->hasRole('SuperAdmin', 'web')) {
-            $query->whereIn('name', $actor->getAllPermissions()
-                ->where('guard_name', 'web')->pluck('name')->all());
-        }
-
-        return $query->orderBy('name')->get();
-    }
 
     public string $role = '';
 
     public array $permissionIds = [];
 
-    public function mount(int $roleId): void
+    /**
+     * Obtiene y autoriza el rol.
+     */
+    private function editableRole(bool $lock = false): Role
     {
-        $this->authorizeManagement();
+        Gate::authorize('viewAny', Role::class);
 
-        $role = Role::query()
-            ->where('guard_name', 'web')
-            ->with([
-                'permissions' => fn ($query) => $query
-                    ->where('guard_name', 'web'),
-            ])
-            ->findOrFail($roleId);
+        $query = Role::query()->where('guard_name', 'web');
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        $role = $query->findOrFail($this->roleId);
+
+        // Protección adicional del rol reservado.
+        abort_if(
+            strcasecmp($role->name, 'SuperAdmin') === 0,
+            403
+        );
 
         Gate::authorize('update', $role);
-        $this->ensureEditableRole($role);
 
-        $this->roleId = $role->id;
-        $this->role = $role->name;
-
-        $this->permissionIds = $role->permissions
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->values()
-            ->all();         
+        return $role;
     }
 
+    /**
+     * Permisos que el usuario autenticado puede administrar.
+     */
+    private function assignablePermissions(): Collection
+    {
+        $actor = auth('web')->user();
+
+        abort_unless($actor, 403);
+
+        $query = Permission::query()
+            ->where('guard_name', 'web');
+
+        if (! $actor->hasRole('SuperAdmin', 'web')) {
+            $names = $actor->getAllPermissions()
+                ->where('guard_name', 'web')
+                ->pluck('name')
+                ->all();
+
+            $query->whereIn('name', $names);
+        }
+
+        return $query->orderBy('name')->get();
+    }
+
+    /**
+     * Inicializa el formulario.
+     */
+    public function mount(int $roleId): void
+    {
+        $this->roleId = $roleId;
+
+        $role = $this->editableRole()->load('permissions');
+
+        $allowedIds = array_map(
+            'intval',
+            $this->assignablePermissions()->modelKeys()
+        );
+
+        $this->role = $role->name;
+
+        // Mostrar solamente permisos administrables.
+        $this->permissionIds = $role->permissions
+            ->filter(
+                fn (Permission $permission): bool => in_array(
+                    (int) $permission->id,
+                    $allowedIds,
+                    true
+                )
+            )
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Actualiza el rol y sus permisos.
+     */
     public function update()
     {
-        $this->authorizeManagement();
+        // Verificar autorización antes de validar.
+        $this->editableRole();
 
-        $role = Role::query()
-            ->where('guard_name', 'web')
-            ->findOrFail($this->roleId);
-
-        $this->ensureEditableRole($role);
-
-    // Revalidar autorización en cada solicitud de guardado.
-    Gate::authorize('update', $role);
-
-    // Continúa el código existente de validación y guardado.
+        $this->role = trim($this->role);
 
         $validated = $this->validate([
             'role' => [
                 'required',
                 'string',
                 'max:255',
+
+                // Impedir utilizar el nombre reservado.
+                static function (
+                    string $attribute,
+                    mixed $value,
+                    Closure $fail
+                ): void {
+                    if (
+                        is_string($value)
+                        && strcasecmp($value, 'SuperAdmin') === 0
+                    ) {
+                        $fail(
+                            'El nombre SuperAdmin está reservado.'
+                        );
+                    }
+                },
+
                 Rule::unique(
                     config('permission.table_names.roles'),
                     'name'
@@ -101,74 +147,158 @@ class EditRole extends Component
                         fn ($query) => $query
                             ->where('guard_name', 'web')
                     )
-                    ->ignore($role->id),
+                    ->ignore($this->roleId),
             ],
 
             'permissionIds' => [
-                'required',
                 'array',
-                'min:1',
             ],
 
             'permissionIds.*' => [
                 'integer',
+                'distinct',
+                Rule::in(
+                    $this->assignablePermissions()->modelKeys()
+                ),
             ],
         ], [
-            'role.required' => 'Debes ingresar el nombre del rol.',
-            'role.unique' => 'Ya existe un rol con ese nombre.',
-            'permissionIds.required' => 'Debes seleccionar al menos un permiso.',
-            'permissionIds.min' => 'Debes seleccionar al menos un permiso.',
+            'role.required' =>
+                'Debes ingresar el nombre del rol.',
+
+            'role.unique' =>
+                'Ya existe un rol con ese nombre.',
+
+            'permissionIds.array' =>
+                'La selección de permisos no es válida.',
+
+            'permissionIds.*.integer' =>
+                'Uno de los permisos seleccionados no es válido.',
+
+            'permissionIds.*.distinct' =>
+                'No puedes seleccionar un permiso más de una vez.',
+
+            'permissionIds.*.in' =>
+                'Uno de los permisos seleccionados no está permitido.',
         ]);
 
-        $permissions = $this->assignablePermissions()
-            ->whereIn('id', $validated['permissionIds']);
+        DB::transaction(function () use ($validated): void {
 
-        if ($permissions->count() !== count($validated['permissionIds'])) {
-            $this->addError(
-                'permissionIds',
-                'Uno o más permisos seleccionados no son válidos.'
+            // Bloquear el rol y revalidar autorización.
+            $role = $this->editableRole(lock: true);
+
+            // Consultar los permisos actuales del editor.
+            $allowedIds = array_map(
+                'intval',
+                $this->assignablePermissions()->modelKeys()
             );
 
-            return;
-        }
+            $requestedIds = array_map(
+                'intval',
+                $validated['permissionIds']
+            );
 
-        DB::transaction(function () use ($role, $validated, $permissions): void {
+            // Evitar modificaciones con permisos revocados.
+            if (array_diff($requestedIds, $allowedIds) !== []) {
+                throw ValidationException::withMessages([
+                    'permissionIds' =>
+                        'Tus permisos cambiaron. Recarga el formulario.',
+                ]);
+            }
+
+            // Consultar los permisos actuales del rol.
+            $role->load('permissions');
+
+            /*
+             * Conservar los permisos existentes que
+             * este editor no puede administrar.
+             */
+            $preservedIds = $role->permissions
+                ->reject(
+                    fn (Permission $permission): bool => in_array(
+                        (int) $permission->id,
+                        $allowedIds,
+                        true
+                    )
+                )
+                ->pluck('id')
+                ->map(fn ($id): int => (int) $id)
+                ->all();
+
+            /*
+             * Combinar permisos protegidos con
+             * los seleccionados por el editor.
+             */
+            $finalIds = array_values(array_unique([
+                ...$preservedIds,
+                ...$requestedIds,
+            ]));
+
+            // Evitar roles sin permisos.
+            if ($finalIds === []) {
+                throw ValidationException::withMessages([
+                    'permissionIds' =>
+                        'El rol debe conservar al menos un permiso.',
+                ]);
+            }
+
+            // Obtener únicamente permisos del guard web.
+            $permissions = Permission::query()
+                ->where('guard_name', 'web')
+                ->whereIn('id', $finalIds)
+                ->get();
+
+            // Comprobar que ninguno haya desaparecido.
+            if ($permissions->count() !== count($finalIds)) {
+                throw ValidationException::withMessages([
+                    'permissionIds' =>
+                        'La selección de permisos cambió. Recarga el formulario.',
+                ]);
+            }
+
+            // Actualizar nombre del rol.
             $role->update([
-                'name' => trim($validated['role']),
+                'name' => $validated['role'],
             ]);
 
+            // Sincronizar sin perder permisos no administrables.
             $role->syncPermissions($permissions);
         });
 
-        session()->flash('success', 'Rol actualizado correctamente.');
+        session()->flash(
+            'success',
+            'Rol actualizado correctamente.'
+        );
 
         return redirect()->route('roles.index');
     }
 
-    public function render()
+    /**
+     * Renderiza el formulario.
+     */
+    public function render(): View
     {
-        $this->authorizeManagement();
-
-        $role = Role::query()
-            ->where('guard_name', 'web')
-            ->findOrFail($this->roleId);
-        $this->ensureEditableRole($role);
+        $this->editableRole();
 
         $permissions = $this->assignablePermissions();
 
-        $selectedPermissions = $permissions
-            ->filter(
-                fn (Permission $permission) => in_array(
-                    (int) $permission->id,
-                    $this->permissionIds,
-                    true
-                )
-            )
-            ->values();
+        $selectedIds = array_map(
+            'intval',
+            $this->permissionIds
+        );
 
         return view('livewire.role.edit-role', [
             'permissions' => $permissions,
-            'selectedPermissions' => $selectedPermissions,
+
+            'selectedPermissions' => $permissions
+                ->filter(
+                    fn (Permission $permission): bool => in_array(
+                        (int) $permission->id,
+                        $selectedIds,
+                        true
+                    )
+                )
+                ->values(),
         ]);
     }
 }
+
