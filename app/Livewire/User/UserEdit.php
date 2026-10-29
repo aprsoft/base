@@ -30,7 +30,7 @@ class UserEdit extends Component
 
     public function mount(User $user): void
     {
-        // 'manage' permite entrar para restaurar, sin conceder permiso para editar datos.
+        // 'manage' permite acceder a una cuenta suspendida para restaurarla.
         Gate::authorize('manage', $user);
 
         $this->userId = (int) $user->id;
@@ -42,22 +42,6 @@ class UserEdit extends Component
             ->map(fn ($id) => (int) $id)
             ->values()
             ->all();
-    }
-
-    #[On('user-edit-remove-role-confirmed')]
-    public function removeRole(int $id): void
-    {
-        $user = $this->editableUser();
-        abort_if($user->hasRole('SuperAdmin', 'web'), 403);
-
-        if (! $this->assignableRoles()->contains('id', $id)) {
-            return;
-        }
-
-        $this->roleIds = array_values(array_filter(
-            $this->roleIds,
-            fn ($roleId) => (int) $roleId !== $id
-        ));
     }
 
     public function confirmSave(): void
@@ -72,8 +56,10 @@ class UserEdit extends Component
 
         $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
 
-        if (! $user->isDirty()
-            && ($isSuperAdminTarget || ! $this->rolesChanged($user, $validated['roleIds']))) {
+        if (
+            ! $user->isDirty()
+            && ($isSuperAdminTarget || ! $this->rolesChanged($user, $validated['roleIds']))
+        ) {
             $this->alert('info', 'No hay cambios para guardar.');
             return;
         }
@@ -92,6 +78,93 @@ class UserEdit extends Component
                 : '',
             confirmLabel: 'Sí, guardar'
         );
+    }
+
+    #[On('user-edit-save-confirmed')]
+    public function save(int $id): void
+    {
+        abort_unless($id === $this->userId, 403);
+
+        $current = $this->editableUser();
+        $validated = $this->validatedData($current);
+        $requestedIds = array_map('intval', $validated['roleIds']);
+
+        try {
+            [$user, $emailChanged] = DB::transaction(function () use ($validated, $requestedIds) {
+                $user = User::query()
+                    ->lockForUpdate()
+                    ->findOrFail($this->userId);
+
+                // Reautorizar dentro de la transacción con el registro bloqueado.
+                Gate::authorize('update', $user);
+
+                $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
+
+                if (! $isSuperAdminTarget) {
+                    $roles = $this->assignableRoles()->whereIn('id', $requestedIds);
+
+                    if ($roles->count() !== count($requestedIds)) {
+                        throw ValidationException::withMessages([
+                            'roleIds' => 'Los roles seleccionados ya no están disponibles.',
+                        ]);
+                    }
+
+                    // Protección adicional de la cuenta principal.
+                    $this->ensurePrincipalRole($user, $requestedIds);
+                }
+
+                $user->fill([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                ]);
+
+                $emailChanged = $user->isDirty('email');
+
+                if ($emailChanged) {
+                    $user->email_verified_at = null;
+                }
+
+                $user->save();
+
+                if (! $isSuperAdminTarget) {
+                    $user->syncRoles($roles);
+                }
+
+                return [$user, $emailChanged];
+            });
+        } catch (ValidationException | AuthorizationException | ModelNotFoundException $exception) {
+            // Las validaciones y denegaciones siguen su flujo habitual en Laravel.
+            throw $exception;
+        } catch (Throwable $exception) {
+            $this->reportFailure(
+                $exception,
+                'No fue posible actualizar el usuario. Intenta nuevamente.'
+            );
+            return;
+        }
+
+        if (! $emailChanged) {
+            session()->flash('success', 'Usuario actualizado correctamente.');
+            $this->redirectRoute('users.index');
+            return;
+        }
+
+        // El envío se realiza después del commit de la transacción.
+        $status = $this->sendResetLink($user);
+
+        if ($status === Password::RESET_LINK_SENT) {
+            session()->flash('success', 'Usuario actualizado. Se solicitó el enlace de contraseña al nuevo correo.');
+            $this->redirectRoute('users.index');
+            return;
+        }
+
+        session()->flash(
+            'warning',
+            $status === Password::RESET_THROTTLED
+                ? 'Correo actualizado, pero el enlace está limitado por una solicitud reciente.'
+                : 'Correo actualizado, pero no se pudo solicitar el enlace de contraseña.'
+        );
+        $this->redirectRoute('users.edit', ['user' => $user->id]);
     }
 
     public function confirmSuspend(): void
@@ -115,32 +188,7 @@ class UserEdit extends Component
     public function suspend(int $id): void
     {
         abort_unless($id === $this->userId, 403);
-
-        $actor = auth('web')->user();
-        abort_unless($actor instanceof User, 403);
-
-        try {
-            DB::transaction(function () use ($actor): void {
-                $target = User::query()
-                    ->lockForUpdate()
-                    ->findOrFail($this->userId);
-
-                // Reautorizar con el registro bloqueado.
-                Gate::forUser($actor)->authorize('suspend', $target);
-
-                // SoftDeletes: conserva el usuario y sus relaciones.
-                $target->delete();
-            });
-        } catch (AuthorizationException | ModelNotFoundException $exception) {
-            throw $exception;
-        } catch (Throwable $exception) {
-            report($exception);
-            $this->alert('error', 'No fue posible suspender al usuario. Intenta nuevamente.');
-            return;
-        }
-
-        session()->flash('success', 'Usuario suspendido correctamente.');
-        $this->redirectRoute('users.index');
+        $this->changeSuspension(restore: false);
     }
 
     public function confirmRestore(): void
@@ -164,31 +212,48 @@ class UserEdit extends Component
     public function restore(int $id): void
     {
         abort_unless($id === $this->userId, 403);
+        $this->changeSuspension(restore: true);
+    }
 
+    /**
+     * Cambia el estado con bloqueo y reautorización en la transacción.
+     * Los errores de autorización y ausencia del registro se propagan.
+     */
+    private function changeSuspension(bool $restore): void
+    {
         $actor = auth('web')->user();
         abort_unless($actor instanceof User, 403);
 
         try {
-            DB::transaction(function () use ($actor): void {
-                $target = User::withTrashed()
+            DB::transaction(function () use ($actor, $restore): void {
+                $target = ($restore ? User::withTrashed() : User::query())
                     ->lockForUpdate()
                     ->findOrFail($this->userId);
 
-                // Reautorizar con el registro bloqueado.
-                Gate::forUser($actor)->authorize('restore', $target);
+                Gate::forUser($actor)->authorize($restore ? 'restore' : 'suspend', $target);
 
-                // Restaurar sin modificar roles ni relaciones.
-                $target->restore();
+                if ($restore) {
+                    $target->restore();
+                } else {
+                    $target->delete(); // SoftDeletes.
+                }
             });
         } catch (AuthorizationException | ModelNotFoundException $exception) {
             throw $exception;
         } catch (Throwable $exception) {
-            report($exception);
-            $this->alert('error', 'No fue posible restaurar al usuario. Intenta nuevamente.');
+            $this->reportFailure(
+                $exception,
+                $restore
+                    ? 'No fue posible restaurar al usuario. Intenta nuevamente.'
+                    : 'No fue posible suspender al usuario. Intenta nuevamente.'
+            );
             return;
         }
 
-        session()->flash('success', 'Usuario restaurado correctamente.');
+        session()->flash(
+            'success',
+            $restore ? 'Usuario restaurado correctamente.' : 'Usuario suspendido correctamente.'
+        );
         $this->redirectRoute('users.index');
     }
 
@@ -196,7 +261,7 @@ class UserEdit extends Component
     {
         $user = $this->editableUser();
 
-        if (Str::lower(trim($this->email)) !== $user->email) {
+        if ($this->emailDoesNotMatch($user)) {
             $this->addError('email', 'Guarda primero el nuevo correo para enviar el enlace a esa dirección.');
             return;
         }
@@ -220,7 +285,7 @@ class UserEdit extends Component
 
         $user = $this->editableUser();
 
-        if (Str::lower(trim($this->email)) !== $user->email) {
+        if ($this->emailDoesNotMatch($user)) {
             $this->addError('email', 'Guarda primero el correo modificado.');
             return;
         }
@@ -236,6 +301,50 @@ class UserEdit extends Component
         }
     }
 
+    public function confirmRemoveRole(int $roleId): void
+    {
+        $user = $this->editableUser();
+        abort_if($user->hasRole('SuperAdmin', 'web'), 403);
+
+        $role = $this->assignableRoles()->firstWhere('id', $roleId);
+
+        if (! $role || ! in_array($roleId, array_map('intval', $this->roleIds), true)) {
+            return;
+        }
+
+        $this->dispatch(
+            'open-confirm-modal',
+            id: $roleId,
+            name: $role->name,
+            confirmEvent: 'user-edit-remove-role-confirmed',
+            title: 'Quitar rol',
+            message: '¿Confirmas que deseas quitar este rol de la selección?',
+            warning: 'El cambio se aplicará al guardar el usuario.',
+            confirmLabel: 'Sí, quitar'
+        );
+    }
+
+    #[On('user-edit-remove-role-confirmed')]
+    public function removeRole(int $id): void
+    {
+        $user = $this->editableUser();
+        abort_if($user->hasRole('SuperAdmin', 'web'), 403);
+
+        if (! $this->assignableRoles()->contains('id', $id)) {
+            return;
+        }
+
+        $this->roleIds = array_values(array_filter(
+            $this->roleIds,
+            fn ($roleId) => (int) $roleId !== $id
+        ));
+    }
+
+    private function emailDoesNotMatch(User $user): bool
+    {
+        return Str::lower(trim($this->email)) !== $user->email;
+    }
+
     private function sendResetLink(User $user): ?string
     {
         try {
@@ -244,6 +353,12 @@ class UserEdit extends Component
             report($exception);
             return null;
         }
+    }
+
+    private function reportFailure(Throwable $exception, string $message): void
+    {
+        report($exception);
+        $this->alert('error', $message);
     }
 
     private function alert(string $type, string $message): void
@@ -262,21 +377,15 @@ class UserEdit extends Component
     private function editableUser(): User
     {
         $user = $this->manageableUser();
-        $this->authorizeTarget($user);
+        Gate::authorize('update', $user);
 
         return $user;
-    }
-
-    private function authorizeTarget(User $user): void
-    {
-        Gate::authorize('update', $user);
-        abort_if($user->trashed(), 404);
     }
 
     private function assignableRoles(): Collection
     {
         $actor = auth('web')->user();
-        abort_unless($actor, 403);
+        abort_unless($actor instanceof User, 403);
 
         $roles = Role::query()
             ->where('guard_name', 'web')
@@ -288,7 +397,6 @@ class UserEdit extends Component
             return $roles;
         }
 
-        // No permitir conceder permisos superiores a los del administrador actual.
         $allowed = $actor->getAllPermissions()
             ->where('guard_name', 'web')
             ->pluck('name')
@@ -343,17 +451,16 @@ class UserEdit extends Component
         ]);
 
         if ($isSuperAdminTarget) {
-            // Nunca aceptar cambios de roles en cuentas SuperAdmin desde Livewire.
+            // Conservar roles existentes de cuentas SuperAdmin.
             $validated['roleIds'] = $user->roles
                 ->where('guard_name', 'web')
                 ->pluck('id')
                 ->map(fn ($id) => (int) $id)
                 ->all();
-
-            return $validated;
+        } else {
+            // Defensa adicional para la cuenta principal.
+            $this->ensurePrincipalRole($user, $validated['roleIds']);
         }
-
-        $this->ensurePrincipalRole($user, $validated['roleIds']);
 
         return $validated;
     }
@@ -369,11 +476,14 @@ class UserEdit extends Component
             ->where('guard_name', 'web')
             ->first();
 
-        if (! $superAdminRole || ! in_array(
-            (int) $superAdminRole->getKey(),
-            array_map('intval', $roleIds),
-            true
-        )) {
+        if (
+            ! $superAdminRole
+            || ! in_array(
+                (int) $superAdminRole->getKey(),
+                array_map('intval', $roleIds),
+                true
+            )
+        ) {
             throw ValidationException::withMessages([
                 'roleIds' => 'La cuenta principal debe conservar el rol SuperAdmin.',
             ]);
@@ -396,110 +506,6 @@ class UserEdit extends Component
         return $current !== $requested;
     }
 
-    public function confirmRemoveRole(int $roleId): void
-    {
-        $user = $this->editableUser();
-        abort_if($user->hasRole('SuperAdmin', 'web'), 403);
-
-        $role = $this->assignableRoles()->firstWhere('id', $roleId);
-        if (! $role || ! in_array($roleId, array_map('intval', $this->roleIds), true)) {
-            return;
-        }
-
-        $this->dispatch(
-            'open-confirm-modal',
-            id: $roleId,
-            name: $role->name,
-            confirmEvent: 'user-edit-remove-role-confirmed',
-            title: 'Quitar rol',
-            message: '¿Confirmas que deseas quitar este rol de la selección?',
-            warning: 'El cambio se aplicará al guardar el usuario.',
-            confirmLabel: 'Sí, quitar'
-        );
-    }
-
-    #[On('user-edit-save-confirmed')]
-    public function save(int $id): void
-    {
-        abort_unless($id === $this->userId, 403);
-
-        $current = $this->editableUser();
-        $validated = $this->validatedData($current);
-        $requestedIds = array_map('intval', $validated['roleIds']);
-
-        try {
-            [$user, $emailChanged] = DB::transaction(function () use ($validated, $requestedIds) {
-                $user = User::query()->lockForUpdate()->findOrFail($this->userId);
-                $this->authorizeTarget($user);
-
-                $isSuperAdminTarget = $user->hasRole('SuperAdmin', 'web');
-
-                if (! $isSuperAdminTarget) {
-                    $roles = $this->assignableRoles()->whereIn('id', $requestedIds);
-                    if ($roles->count() !== count($requestedIds)) {
-                        throw ValidationException::withMessages([
-                            'roleIds' => 'Los roles seleccionados ya no están disponibles.',
-                        ]);
-                    }
-
-                    $this->ensurePrincipalRole($user, $requestedIds);
-                }
-
-                $user->fill([
-                    'name' => $validated['name'],
-                    'email' => $validated['email'],
-                ]);
-
-                $emailChanged = $user->isDirty('email');
-                if ($emailChanged) {
-                    $user->email_verified_at = null;
-                }
-
-                $user->save();
-
-                if (! $isSuperAdminTarget) {
-                    $user->syncRoles($roles);
-                }
-
-                return [$user, $emailChanged];
-            });
-        } catch (ValidationException $exception) {
-            throw $exception;
-        } catch (AuthorizationException | ModelNotFoundException $exception) {
-            throw $exception;
-        } catch (Throwable $exception) {
-            report($exception);
-
-            $this->alert(
-                'error',
-                'No fue posible actualizar el usuario. Intenta nuevamente.'
-            );
-
-            return;
-        }
-
-        if (! $emailChanged) {
-            session()->flash('success', 'Usuario actualizado correctamente.');
-            $this->redirectRoute('users.index');
-            return;
-        }
-
-        $status = $this->sendResetLink($user);
-
-        if ($status === Password::RESET_LINK_SENT) {
-            session()->flash('success', 'Usuario actualizado. Se solicitó el enlace de contraseña al nuevo correo.');
-            $this->redirectRoute('users.index');
-            return;
-        }
-
-        session()->flash('warning',
-            $status === Password::RESET_THROTTLED
-                ? 'Correo actualizado, pero el enlace está limitado por una solicitud reciente.'
-                : 'Correo actualizado, pero no se pudo solicitar el enlace de contraseña.'
-        );
-        $this->redirectRoute('users.edit', ['user' => $user->id]);
-    }
-
     public function render(): View
     {
         $user = $this->manageableUser();
@@ -509,6 +515,7 @@ class UserEdit extends Component
         $roles = ($canUpdate && ! $isSuperAdminTarget)
             ? $this->assignableRoles()
             : new Collection();
+
         $selectedIds = array_map('intval', $this->roleIds);
 
         return view('livewire.user.user-edit', [
@@ -517,7 +524,6 @@ class UserEdit extends Component
             'canUpdate' => $canUpdate,
             'canSuspend' => Gate::allows('suspend', $user),
             'canRestore' => Gate::allows('restore', $user),
-            'canDelete' => Gate::allows('delete', $user),
             'isSuperAdminTarget' => $isSuperAdminTarget,
             'roles' => $roles,
             'selectedRoles' => $roles->filter(
