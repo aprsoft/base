@@ -83,6 +83,11 @@ class EditRole extends Component
 
         $this->ensureEditableRole($role);
 
+    // Revalidar autorización en cada solicitud de guardado.
+    Gate::authorize('update', $role);
+
+    // Continúa el código existente de validación y guardado.
+
         $validated = $this->validate([
             'role' => [
                 'required',
