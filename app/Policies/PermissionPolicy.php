@@ -29,17 +29,17 @@ class PermissionPolicy
     {
         return $permission->guard_name === 'web'
             && ! $this->isSystemPermission($permission)
-            && ! $permission->roles()->exists()
-            && $this->allowed($actor, 'permissions.edit');
+            && $this->allowed($actor, 'permissions.edit')
+            && ! $this->isRelated($permission, 'roles');
     }
 
     public function delete(User $actor, Permission $permission): bool
     {
         return $permission->guard_name === 'web'
             && ! $this->isSystemPermission($permission)
-            && ! $permission->roles()->exists()
-            && ! $permission->users()->exists()
-            && $this->allowed($actor, 'permissions.destroy');
+            && $this->allowed($actor, 'permissions.destroy')
+            && ! $this->isRelated($permission, 'roles')
+            && ! $this->isRelated($permission, 'users');
     }
 
     public function forceDelete(User $actor, Permission $permission): bool
@@ -47,12 +47,22 @@ class PermissionPolicy
         return false;
     }
 
-    private function isRelated(Permission $permission, string $relation): bool
-    {
-        $existsAttribute = $relation.'_exists';
+    /**
+     * Comprueba si el permiso tiene relaciones.
+     *
+     * Aprovecha el resultado de withExists() cuando está
+     * disponible para evitar consultas adicionales.
+     *
+     * Si el atributo no fue precargado, consulta la BD.
+     */
+    private function isRelated(
+        Permission $permission,
+        string $relation
+    ): bool {
+        $attribute = $relation.'_exists';
 
-        if (array_key_exists($existsAttribute, $permission->getAttributes())) {
-            return (bool) $permission->getAttribute($existsAttribute);
+        if (array_key_exists($attribute, $permission->getAttributes())) {
+            return (bool) $permission->getAttribute($attribute);
         }
 
         return $permission->{$relation}()->exists();
