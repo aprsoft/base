@@ -2,6 +2,7 @@
 <?php
 
 use App\Http\Controllers\ErrorController;
+use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -103,6 +104,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('permissions/{permission}', [PermissionController::class, 'show'])
         ->middleware('can:permissions.show')
         ->name('permissions.show');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Documentos PDF
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('pdf/{type}/{record}', [PdfController::class, 'show'])
+        ->whereNumber('record')
+        ->name('pdf.show');
+
+    Route::get('pdf/{type}/{record}/download', [PdfController::class, 'download'])
+        ->whereNumber('record')
+        ->name('pdf.download');
 
     /*
     |--------------------------------------------------------------------------
