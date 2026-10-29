@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Models\ErrorLog;
 use App\Models\User;
 
 class ErrorLogPolicy
@@ -12,22 +11,13 @@ class ErrorLogPolicy
         return $this->allowed($actor, 'errors.index');
     }
 
-    public function view(User $actor, ErrorLog $errorLog): bool
+    public function view(User $actor): bool
     {
         return $this->allowed($actor, 'errors.show');
     }
 
-    public function create(User $actor): bool
-    {
-        return false;
-    }
 
-    public function update(User $actor, ErrorLog $errorLog): bool
-    {
-        return false;
-    }
-
-    public function delete(User $actor, ErrorLog $errorLog): bool
+    public function delete(User $actor): bool
     {
         return false;
     }

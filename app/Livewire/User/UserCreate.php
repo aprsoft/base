@@ -1,19 +1,20 @@
+
 <?php
 
 namespace App\Livewire\User;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Gate;
-use App\Services\ErrorLog\ErrorLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Spatie\Permission\Models\Role;
 use Throwable;
@@ -23,12 +24,15 @@ class UserCreate extends Component
     public string $name = '';
     public string $email = '';
     public array $roleIds = [];
-   
 
-    // Obtiene todos los roles que existen en la BD
+    /**
+     * Obtiene los roles que el usuario autenticado
+     * está autorizado a asignar.
+     */
     private function assignableRoles(): Collection
     {
         $actor = auth('web')->user();
+
         abort_unless($actor, 403);
 
         $roles = Role::query()
@@ -41,7 +45,7 @@ class UserCreate extends Component
             return $roles;
         }
 
-        // Una cuenta no puede conceder a terceros permisos que no posee.
+        // Impedir conceder permisos que el actor no posee.
         $allowed = $actor->getAllPermissions()
             ->where('guard_name', 'web')
             ->pluck('name')
@@ -50,11 +54,18 @@ class UserCreate extends Component
         return $roles->filter(
             fn (Role $role) => $role->name !== 'SuperAdmin'
                 && $role->permissions->every(
-                    fn ($permission) => in_array($permission->name, $allowed, true)
+                    fn ($permission) => in_array(
+                        $permission->name,
+                        $allowed,
+                        true
+                    )
                 )
         )->values();
     }
 
+    /**
+     * Reglas de validación del formulario.
+     */
     protected function rules(): array
     {
         return [
@@ -85,6 +96,9 @@ class UserCreate extends Component
         ];
     }
 
+    /**
+     * Mensajes personalizados de validación.
+     */
     protected array $messages = [
         'name.required' => 'Debes ingresar el nombre del usuario.',
         'name.max' => 'El nombre no puede superar los 255 caracteres.',
@@ -103,12 +117,16 @@ class UserCreate extends Component
         'roleIds.*.distinct' => 'No puedes seleccionar un rol más de una vez.',
     ];
 
+    /**
+     * Valida los datos antes de abrir la confirmación.
+     */
     public function confirmSave(): void
     {
-        Gate::authorize('create', User::class);       
+        Gate::authorize('create', User::class);
 
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));
+
         $this->validate();
 
         $this->dispatch(
@@ -123,11 +141,18 @@ class UserCreate extends Component
         );
     }
 
+    /**
+     * Solicita confirmación para quitar un rol.
+     */
     public function confirmRemoveRole(int $roleId): void
-    {        
+    {
+        $role = $this->assignableRoles()
+            ->firstWhere('id', $roleId);
 
-        $role = $this->assignableRoles()->firstWhere('id', $roleId);
-        if (! $role || ! in_array($roleId, array_map('intval', $this->roleIds), true)) {
+        if (
+            ! $role
+            || ! in_array($roleId, array_map('intval', $this->roleIds), true)
+        ) {
             return;
         }
 
@@ -143,11 +168,12 @@ class UserCreate extends Component
         );
     }
 
-    #[\Livewire\Attributes\On('user-create-remove-role-confirmed')]
+    /**
+     * Elimina un rol de la selección.
+     */
+    #[On('user-create-remove-role-confirmed')]
     public function removeRole(int $roleId): void
     {
-      
-
         if (! $this->assignableRoles()->contains('id', $roleId)) {
             return;
         }
@@ -158,15 +184,22 @@ class UserCreate extends Component
         ));
     }
 
-    #[\Livewire\Attributes\On('user-create-save-confirmed')]
-    public function save(int $id, ErrorLogger $errorLogger)
+    /**
+     * Crea el usuario, asigna sus roles y solicita
+     * el envío del enlace para establecer contraseña.
+     *
+     * Mantiene el parámetro id por compatibilidad
+     * con el evento de confirmación existente.
+     */
+    #[On('user-create-save-confirmed')]
+    public function save(int $id)
     {
-        Gate::authorize('create', User::class);      
+        Gate::authorize('create', User::class);
 
         $this->name = trim($this->name);
         $this->email = Str::lower(trim($this->email));
 
-        // Permitir que Livewire muestre los errores en el formulario.
+        // Revalidar después de confirmar.
         $validated = $this->validate();
 
         /*
@@ -191,7 +224,7 @@ class UserCreate extends Component
                     'name' => $validated['name'],
                     'email' => $validated['email'],
 
-                    // Contraseña temporal desconocida para el usuario.
+                    // Contraseña temporal aleatoria.
                     // El modelo User aplica el cast "hashed".
                     'password' => Str::random(64),
                 ]);
@@ -203,32 +236,19 @@ class UserCreate extends Component
 
         } catch (ValidationException $exception) {
 
+            // Mantener los errores de validación en Livewire.
             throw $exception;
-
-        } catch (QueryException $exception) {
-
-            $errorLogger->report($exception, [
-                'operation' => 'user.create',
-                'error_type' => 'database',
-            ]);
-
-            $this->addError(
-                'form',
-                'Ocurrió un error de base de datos al crear el usuario.'
-            );
-
-            return;
 
         } catch (Throwable $exception) {
 
-            $errorLogger->report($exception, [
-                'operation' => 'user.create',
-                'error_type' => 'unexpected',
-            ]);
+            // Registrar mediante el manejador global de Laravel.
+            report($exception);
 
             $this->addError(
                 'form',
-                'Ocurrió un error inesperado al crear el usuario.'
+                $exception instanceof QueryException
+                    ? 'Ocurrió un error de base de datos al crear el usuario.'
+                    : 'Ocurrió un error inesperado al crear el usuario.'
             );
 
             return;
@@ -236,27 +256,22 @@ class UserCreate extends Component
 
         /*
         |--------------------------------------------------------------------------
-        | Enviar enlace para establecer contraseña
+        | Solicitar enlace para establecer contraseña
         |--------------------------------------------------------------------------
         |
-        | El usuario ya fue guardado correctamente.
-        | El correo se solicita fuera de la transacción.
+        | Se ejecuta fuera de la transacción.
+        | Si falla, el usuario creado permanece registrado.
         |
         */
 
         try {
-
             $status = Password::sendResetLink([
                 'email' => $user->email,
             ]);
 
         } catch (Throwable $exception) {
 
-            $errorLogger->report($exception, [
-                'operation' => 'user.create.password_link',
-                'user_id' => $user->id,
-                'error_type' => 'notification',
-            ]);
+            report($exception);
 
             session()->flash(
                 'warning',
@@ -313,10 +328,14 @@ class UserCreate extends Component
         return redirect()->route('users.index');
     }
 
+    /**
+     * Renderiza el formulario con los roles autorizados.
+     */
     public function render(): View
     {
-        Gate::authorize('create', User::class);        $roles = $this->assignableRoles();
+        Gate::authorize('create', User::class);
 
+        $roles = $this->assignableRoles();
         $selectedIds = array_map('intval', $this->roleIds);
 
         return view('livewire.user.user-create', [
