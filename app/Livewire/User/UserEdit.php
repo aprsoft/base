@@ -3,8 +3,10 @@
 namespace App\Livewire\User;
 
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Password;
@@ -40,7 +42,7 @@ class UserEdit extends Component
             ->map(fn ($id) => (int) $id)
             ->values()
             ->all();
-    }    
+    }
 
     #[On('user-edit-remove-role-confirmed')]
     public function removeRole(int $id): void
@@ -90,7 +92,7 @@ class UserEdit extends Component
                 : '',
             confirmLabel: 'Sí, guardar'
         );
-    }  
+    }
 
     public function confirmSuspend(): void
     {
@@ -117,17 +119,25 @@ class UserEdit extends Component
         $actor = auth('web')->user();
         abort_unless($actor instanceof User, 403);
 
-        DB::transaction(function () use ($actor): void {
-            $target = User::query()
-                ->lockForUpdate()
-                ->findOrFail($this->userId);
+        try {
+            DB::transaction(function () use ($actor): void {
+                $target = User::query()
+                    ->lockForUpdate()
+                    ->findOrFail($this->userId);
 
-            // Reautorizar con el registro bloqueado.
-            Gate::forUser($actor)->authorize('suspend', $target);
+                // Reautorizar con el registro bloqueado.
+                Gate::forUser($actor)->authorize('suspend', $target);
 
-            // SoftDeletes: conserva el usuario y sus relaciones.
-            $target->delete();
-        });
+                // SoftDeletes: conserva el usuario y sus relaciones.
+                $target->delete();
+            });
+        } catch (AuthorizationException | ModelNotFoundException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->alert('error', 'No fue posible suspender al usuario. Intenta nuevamente.');
+            return;
+        }
 
         session()->flash('success', 'Usuario suspendido correctamente.');
         $this->redirectRoute('users.index');
@@ -158,17 +168,25 @@ class UserEdit extends Component
         $actor = auth('web')->user();
         abort_unless($actor instanceof User, 403);
 
-        DB::transaction(function () use ($actor): void {
-            $target = User::withTrashed()
-                ->lockForUpdate()
-                ->findOrFail($this->userId);
+        try {
+            DB::transaction(function () use ($actor): void {
+                $target = User::withTrashed()
+                    ->lockForUpdate()
+                    ->findOrFail($this->userId);
 
-            // Reautorizar con el registro bloqueado.
-            Gate::forUser($actor)->authorize('restore', $target);
+                // Reautorizar con el registro bloqueado.
+                Gate::forUser($actor)->authorize('restore', $target);
 
-            // Restaurar sin modificar roles ni relaciones.
-            $target->restore();
-        });
+                // Restaurar sin modificar roles ni relaciones.
+                $target->restore();
+            });
+        } catch (AuthorizationException | ModelNotFoundException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->alert('error', 'No fue posible restaurar al usuario. Intenta nuevamente.');
+            return;
+        }
 
         session()->flash('success', 'Usuario restaurado correctamente.');
         $this->redirectRoute('users.index');
@@ -447,16 +465,18 @@ class UserEdit extends Component
             });
         } catch (ValidationException $exception) {
             throw $exception;
+        } catch (AuthorizationException | ModelNotFoundException $exception) {
+            throw $exception;
         } catch (Throwable $exception) {
             report($exception);
 
             $this->alert(
                 'error',
-                'No fue posible completar la operación.'
+                'No fue posible actualizar el usuario. Intenta nuevamente.'
             );
-        //     $this->addError('form', 'No fue posible actualizar el usuario. Intenta nuevamente.');
-        //     return;
-         }
+
+            return;
+        }
 
         if (! $emailChanged) {
             session()->flash('success', 'Usuario actualizado correctamente.');
