@@ -17,7 +17,7 @@ class ErrorController extends Controller
 
     public function show(int $id)
     {
-        Gate::authorize('errors.show');
+        
 
         $record = ErrorLog::findOrFail($id);
 

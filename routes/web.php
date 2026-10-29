@@ -1,79 +1,123 @@
+
 <?php
 
 use App\Http\Controllers\ErrorController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Models\ErrorLog;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+
+/*
+|--------------------------------------------------------------------------
+| Página principal
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
 
+/*
+|--------------------------------------------------------------------------
+| Rutas autenticadas
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware(['auth'])->group(function () {
+
     Route::get('/dashboard', function () {
         return view('dashboard', ['title' => 'Dashboard']);
     })->name('dashboard');
 
-        /*
+    /*
     |--------------------------------------------------------------------------
-    | Users
+    | Usuarios - UserPolicy
     |--------------------------------------------------------------------------
     */
 
-        Route::get('users', [UserController::class, 'index'])->name('users.index');
-        Route::get('users/create', [UserController::class, 'create'])->name('users.create');
-        Route::get('users/{user}', [UserController::class, 'show'])->withTrashed()->name('users.show');
-        Route::get('users/{user}/edit', [UserController::class, 'edit'])->withTrashed()->name('users.edit');
-        
+    Route::get('users', [UserController::class, 'index'])
+        ->middleware('can:viewAny,'.User::class)
+        ->name('users.index');
+
+    Route::get('users/create', [UserController::class, 'create'])
+        ->middleware('can:create,'.User::class)
+        ->name('users.create');
+
+    Route::get('users/{user}', [UserController::class, 'show'])
+        ->withTrashed()
+        ->middleware('can:view,user')
+        ->name('users.show');
+
+    // manage permite editar o acceder para restaurar.
+    Route::get('users/{user}/edit', [UserController::class, 'edit'])
+        ->withTrashed()
+        ->middleware('can:manage,user')
+        ->name('users.edit');
 
     /*
     |--------------------------------------------------------------------------
-    | Roles
+    | Roles - RolePolicy
     |--------------------------------------------------------------------------
     */
 
     Route::get('roles', [RoleController::class, 'index'])
+        ->middleware('can:viewAny,'.Role::class)
         ->name('roles.index');
 
     Route::get('roles/create', [RoleController::class, 'create'])
+        ->middleware('can:create,'.Role::class)
         ->name('roles.create');
 
+    // El controlador verifica la Policy sobre el rol consultado.
     Route::get('roles/{role}/edit', [RoleController::class, 'edit'])
-        ->name('roles.edit');           
-    
-    
+        ->middleware('can:roles.edit')
+        ->name('roles.edit');
+
     Route::get('roles/{role}', [RoleController::class, 'show'])
-        ->name('roles.show');        
-
-
+        ->middleware('can:roles.show')
+        ->name('roles.show');
 
     /*
     |--------------------------------------------------------------------------
-    | Permissions
+    | Permisos - PermissionPolicy
     |--------------------------------------------------------------------------
     */
 
     Route::get('permissions', [PermissionController::class, 'index'])
+        ->middleware('can:viewAny,'.Permission::class)
         ->name('permissions.index');
 
     Route::get('permissions/create', [PermissionController::class, 'create'])
+        ->middleware('can:create,'.Permission::class)
         ->name('permissions.create');
 
+    // El controlador verifica la Policy sobre el permiso consultado.
     Route::get('permissions/{permission}/edit', [PermissionController::class, 'edit'])
+        ->middleware('can:permissions.edit')
         ->name('permissions.edit');
 
     Route::get('permissions/{permission}', [PermissionController::class, 'show'])
+        ->middleware('can:permissions.show')
         ->name('permissions.show');
 
     /*
     |--------------------------------------------------------------------------
-    | Error_log
+    | Registro de errores - ErrorLogPolicy
     |--------------------------------------------------------------------------
     */
 
-        Route::get('errors', [ErrorController::class, 'index'])->name('errors.index');
-        Route::get('errors/{errorLog}', [ErrorController::class, 'show'])->name('errors.show');
+    Route::get('errors', [ErrorController::class, 'index'])
+        ->middleware('can:viewAny,'.ErrorLog::class)
+        ->name('errors.index');
+
+    // El controlador verifica la Policy sobre el registro.
+    Route::get('errors/{id}', [ErrorController::class, 'show'])
+        ->middleware('can:errors.show')
+        ->name('errors.show');
 
 });
 
