@@ -2,9 +2,12 @@
 
 namespace App\Livewire\Role;
 
+use App\Support\Permissions\PermissionCatalog;
+use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -38,51 +41,51 @@ class CreateRole extends Component
     public function save()
     {
         $this->authorizeManagement();
+        $this->role = trim($this->role);
 
         $validated = $this->validate([
             'role' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique(
-                    config('permission.table_names.roles'),
-                    'name'
-                )->where(
-                    fn ($query) => $query->where('guard_name', 'web')
-                ),
+                static function (string $attribute, mixed $value, Closure $fail): void {
+                    if (is_string($value) && strcasecmp($value, 'SuperAdmin') === 0) {
+                        $fail('El nombre SuperAdmin está reservado.');
+                    }
+                },
+                Rule::unique(config('permission.table_names.roles'), 'name')
+                    ->where(fn ($query) => $query->where('guard_name', 'web')),
             ],
-
-            'permissionIds' => [
-                'required',
-                'array',
-                'min:1',
-            ],
-
+            'permissionIds' => ['required', 'array', 'min:1'],
             'permissionIds.*' => [
                 'integer',
+                'distinct',
+                Rule::in($this->assignablePermissions()->modelKeys()),
             ],
         ], [
             'role.required' => 'Debes ingresar el nombre del rol.',
             'role.unique' => 'Ya existe un rol con ese nombre.',
             'permissionIds.required' => 'Debes seleccionar al menos un permiso.',
             'permissionIds.min' => 'Debes seleccionar al menos un permiso.',
+            'permissionIds.*.distinct' => 'No puedes seleccionar un permiso más de una vez.',
+            'permissionIds.*.in' => 'Uno de los permisos seleccionados no está permitido.',
         ]);
 
-        $permissions = $this->assignablePermissions()
-            ->whereIn('id', $validated['permissionIds']);
+        DB::transaction(function () use ($validated): void {
+            $requestedIds = array_map('intval', $validated['permissionIds']);
 
-        if ($permissions->count() !== count($validated['permissionIds'])) {
-            $this->addError(
-                'permissionIds',
-                'Uno o más permisos seleccionados no son válidos.'
-            );
+            // Revalidar dentro de la transacción para no usar permisos revocados.
+            $permissions = $this->assignablePermissions()
+                ->whereIn('id', $requestedIds);
 
-            return;
-        }
+            if ($permissions->count() !== count($requestedIds)) {
+                throw ValidationException::withMessages([
+                    'permissionIds' => 'Tus permisos cambiaron. Recarga el formulario.',
+                ]);
+            }
 
-        DB::transaction(function () use ($validated, $permissions): void {
             $role = Role::create([
-                'name' => trim($validated['role']),
+                'name' => $validated['role'],
                 'guard_name' => 'web',
             ]);
 
@@ -110,9 +113,14 @@ class CreateRole extends Component
             )
             ->values();
 
+        $catalog = app(PermissionCatalog::class);
+        $groups = $catalog->groups($permissions);
+
         return view('livewire.role.create-role', [
             'permissions' => $permissions,
             'selectedPermissions' => $selectedPermissions,
+            'permissionGroups' => $groups,
+            'groupsForAlpine' => $catalog->forAlpine($groups),
         ]);
     }
 }

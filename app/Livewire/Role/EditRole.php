@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Role;
 
+use App\Support\Permissions\PermissionCatalog;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -286,7 +287,12 @@ class EditRole extends Component
             $this->permissionIds
         );
 
+        $catalog = app(PermissionCatalog::class);
+        $groups = $catalog->groups($permissions);
+
         return view('livewire.role.edit-role', [
+            'permissionGroups' => $groups,
+            'groupsForAlpine' => $catalog->forAlpine($groups),
             'permissions' => $permissions,
 
             'selectedPermissions' => $permissions

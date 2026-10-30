@@ -1,38 +1,4 @@
-@php
-    /**
-     * Solo se agrupan los permisos que el componente Livewire ya autorizó.
-     * La agrupación es visual; no modifica roles, guards ni permisos en BD.
-     */
-    $permissionGroups = $permissions
-        ->groupBy(static function ($permission): string {
-            $dot = strpos($permission->name, '.');
-
-            return $dot === false || $dot === 0
-                ? 'otros'
-                : substr($permission->name, 0, $dot);
-        })
-        ->sortKeys();
-
-    $groupsForAlpine = $permissionGroups
-        ->map(static fn ($items, $module) => [
-            'module' => (string) $module,
-            'ids' => $items->pluck('id')->map(static fn ($id) => (int) $id)->values()->all(),
-            'names' => $items->pluck('name')->values()->all(),
-        ])
-        ->values()
-        ->all();
-
-    $moduleLabels = [
-        'users' => 'Usuarios',
-        'roles' => 'Roles',
-        'permissions' => 'Permisos',
-        'profile' => 'Perfil',
-        'errors' => 'Registros de errores',
-        'otros' => 'Otros',
-    ];
-@endphp
-
-<div class="space-y-4">
+<div class="space-y-4" x-data="permissionSelector(@js($groupsForAlpine))">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
             <h2 class="text-xl font-semibold text-base-content">
@@ -77,19 +43,19 @@
                     <div class="border-t border-base-300 pt-3">
                         <div class="mb-2 flex items-center justify-between gap-2">
                             <span class="text-sm font-medium text-base-content">Permisos seleccionados</span>
-                            <x-badge :value="$selectedPermissions->count()" class="badge-primary badge-soft" />
+                            <span class="badge badge-primary badge-soft" x-text="selected().length"></span>
                         </div>
-
-                        @if ($selectedPermissions->isEmpty())
-                            <p class="text-xs text-base-content/60">Todavía no hay permisos seleccionados.</p>
-                        @else
-                            <div class="flex max-h-32 flex-wrap content-start gap-1.5 overflow-y-auto">
-                                @foreach ($selectedPermissions as $permission)
-                                    <x-badge wire:key="selected-permission-{{ $permission->id }}"
-                                             :value="$permission->name" class="badge-primary badge-soft" />
-                                @endforeach
-                            </div>
-                        @endif
+                        <p x-show="selected().length === 0" class="text-xs text-base-content/60">
+                            Todavía no hay permisos seleccionados.
+                        </p>
+                        <div x-show="selected().length > 0" class="flex max-h-32 flex-wrap content-start gap-1.5 overflow-y-auto">
+                            <template x-for="permission in selectedDetails()" :key="permission.id">
+                                <span class="badge badge-primary badge-soft" x-text="permission.name"></span>
+                            </template>
+                            <span x-show="selected().length > 20" class="text-xs text-base-content/60">
+                                Y <span x-text="selected().length - 20"></span> más…
+                            </span>
+                        </div>
                     </div>
                 </div>
             </x-card>
@@ -103,79 +69,7 @@
                     <x-badge :value="$permissions->count() . ' disponibles'" class="badge-neutral badge-soft" />
                 </div>
 
-                <div
-                    x-data="{
-                        search: '',
-                        groups: @js($groupsForAlpine),
-
-                        selected() {
-                            return ($wire.permissionIds || []).map(id => Number(id));
-                        },
-
-                        group(module) {
-                            return this.groups.find(item => item.module === module);
-                        },
-
-                        selectedInGroup(module) {
-                            const group = this.group(module);
-                            if (!group) return 0;
-                            const selected = new Set(this.selected());
-                            return group.ids.filter(id => selected.has(id)).length;
-                        },
-
-                        allInGroup(module) {
-                            const group = this.group(module);
-                            return !!group && group.ids.length > 0
-                                && this.selectedInGroup(module) === group.ids.length;
-                        },
-
-                        toggleGroup(module) {
-                            const group = this.group(module);
-                            if (!group) return;
-
-                            const selected = new Set(this.selected());
-                            const remove = this.allInGroup(module);
-
-                            for (const id of group.ids) {
-                                if (remove) selected.delete(id);
-                                else selected.add(id);
-                            }
-
-                            $wire.$set('permissionIds', Array.from(selected));
-                        },
-
-                        selectAll() {
-                            $wire.$set('permissionIds',
-                                this.groups.flatMap(group => group.ids));
-                        },
-
-                        clearAll() {
-                            $wire.$set('permissionIds', []);
-                        },
-
-                        normalizedSearch() {
-                            return this.search.trim().toLocaleLowerCase();
-                        },
-
-                        matchesPermission(module, name) {
-                            const term = this.normalizedSearch();
-                            return term === ''
-                                || module.toLocaleLowerCase().includes(term)
-                                || name.toLocaleLowerCase().includes(term);
-                        },
-
-                        matchesGroup(module) {
-                            const group = this.group(module);
-                            return !!group && group.names.some(name =>
-                                this.matchesPermission(module, name));
-                        },
-
-                        hasMatches() {
-                            return this.groups.some(group => this.matchesGroup(group.module));
-                        }
-                    }"
-                    class="space-y-3"
-                >
+                <div class="space-y-3">
                     <label class="block">
                         <span class="mb-1 block text-xs font-medium text-base-content/70">Buscar permisos</span>
                         <input type="search" x-model.debounce.150ms="search"
@@ -201,33 +95,33 @@
                     </div>
 
                     <div class="max-h-80 space-y-3 overflow-y-auto rounded-lg border border-base-300 p-3">
-                        @forelse ($permissionGroups as $module => $modulePermissions)
-                            <section wire:key="permission-module-{{ md5($module) }}"
-                                     x-show="matchesGroup(@js($module))"
+                        @forelse ($permissionGroups as $group)
+                            <section wire:key="permission-module-{{ md5($group['module']) }}"
+                                     x-show="matchesGroup(@js($group['module']))"
                                      class="rounded-lg border border-base-300 p-3">
                                 <div class="mb-2 flex items-center justify-between gap-2">
                                     <button type="button"
-                                            x-on:click="toggleGroup(@js($module))"
-                                            :aria-pressed="allInGroup(@js($module))"
+                                            x-on:click="toggleGroup(@js($group['module']))"
+                                            :aria-pressed="allInGroup(@js($group['module']))"
                                             wire:loading.attr="disabled"
                                             class="flex items-center gap-2 rounded-md text-left text-sm font-semibold text-base-content hover:text-primary">
                                         <span aria-hidden="true"
-                                              x-text="allInGroup(@js($module)) ? '☑' : (selectedInGroup(@js($module)) ? '◩' : '☐')"></span>
-                                        <span>{{ $moduleLabels[$module] ?? \Illuminate\Support\Str::headline($module) }}</span>
+                                              x-text="allInGroup(@js($group['module'])) ? '☑' : (selectedInGroup(@js($group['module'])) ? '◩' : '☐')"></span>
+                                        <span>{{ $group['label'] }}</span>
                                     </button>
                                     <span class="text-xs tabular-nums text-base-content/60">
-                                        <span x-text="selectedInGroup(@js($module))"></span>/{{ $modulePermissions->count() }}
+                                        <span x-text="selectedInGroup(@js($group['module']))"></span>/{{ $group['permissions']->count() }}
                                     </span>
                                 </div>
 
                                 <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                    @foreach ($modulePermissions as $permission)
+                                    @foreach ($group['permissions'] as $permission)
                                         <div wire:key="role-permission-{{ $permission->id }}"
-                                             x-show="matchesPermission(@js($module), @js($permission->name))"
+                                             x-show="matchesPermission(@js($group['module']), @js($permission->name))"
                                              class="rounded-md px-1 py-1 hover:bg-base-200">
                                             <x-checkbox :label="$permission->name"
                                                         value="{{ $permission->id }}"
-                                                        wire:model.number.live="permissionIds"
+                                                        wire:model.number="permissionIds"
                                                         class="checkbox-primary checkbox-sm"
                                                         omit-error />
                                         </div>
