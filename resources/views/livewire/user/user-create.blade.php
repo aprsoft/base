@@ -23,14 +23,6 @@
 
     <x-form wire:submit="confirmSave" class="!gap-4">
 
-        @foreach ($errors->get('roleIds.*') as $messages)
-            @foreach ($messages as $message)
-                <p class="mt-1 text-xs text-error">
-                    {{ $message }}
-                </p>
-            @endforeach
-        @endforeach
-
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
 
             {{-- Datos del usuario --}}
@@ -130,10 +122,12 @@
                     </p>
                 @enderror
 
-                @foreach ($errors->get('roleIds.*') as $message)
-                    <p class="mt-1 text-xs text-error">
-                        {{ $message }}
-                    </p>
+                @foreach ($errors->get('roleIds.*') as $messages)
+                    @foreach ($messages as $message)
+                        <p class="mt-1 text-xs text-error">
+                            {{ $message }}
+                        </p>
+                    @endforeach
                 @endforeach
 
                 {{-- Roles seleccionados --}}
