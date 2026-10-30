@@ -1,55 +1,74 @@
-# DTE V2 - integración progresiva con OpenFactura
+# Refactor DTE V2 — BASE / OpenFactura
 
-**Estado:** propuesta implementada en paralelo al módulo legado. No conectada todavía a rutas ni modelos de BASE; no se han realizado emisiones reales.
+**Código creado en:** app/Services/Dte/V2.
+**Respaldo íntegro:** backups/dte-legacy-20261030 (árbol Git original, sin alteraciones);
+rama backup/dte-before-refactor-20261030-0801cc7.
 
-## Alcance
-- Transporte Laravel HTTP único, desarrollo y producción en hosts oficiales fijos.
-- Emisión POST /v2/dte/document y consulta GET /v2/dte/document/{rut}/{tipo}/{folio}/{formato}.
-- La API key se pasa explícitamente por operación: no se consulta Company::first(), para evitar seleccionar accidentalmente otra empresa o tenant.
-- La clave de idempotencia se pasa explícitamente y NO se renueva en reintentos de la misma operación.
-- No hay reintentos automáticos de emisiones. Un timeout o HTTP 5xx es indeterminado, no prueba de rechazo.
-- Validación estructural mínima de DTE 33, 34, 39, 41, 52, 56 y 61, sin inventar campos ni calcular tributos.
-- El resultado del proveedor no equivale a aceptación definitiva del SII.
-- El código original de app/Services/Dte sigue sin modificarse.
+## Alcance real
 
-## Uso desde una capa de aplicación ya autorizada
+- Emisión JSON vía POST /v2/dte/document; consultado conforme a la documentación oficial.
+- GET /v2/dte/document/{rut}/{type}/{folio}/{value}; formatos status/xml/json/pdf/cedible.
+- POST /v2/dte/document/issued y /received con filtros paginados.
+- GET /v2/dte/organization.
+- Claves de API por operación, ambientes permitidos en código (desarrollo/producción).
+- Cabecera Idempotency-Key: el integrador debe guardar una clave por operación, reusarla y garantizar unicidad por empresa.
+- Sin reintentos automáticos de POST. Timeouts, 5xx y OF-06 se clasifican como desconocidos y requieren conciliación.
+- Separación de los 7 tipos 33,34,39,41,52,56,61 bajo una interfaz DteMapper.
+- Los mappers reciben arrays con nomenclatura OpenFactura/SII y mantienen sus valores intactos.
+- Validador estructural mínimo. No sustituye validación tributaria, ni comprueba RUT por dígito verificador, montos versus líneas, reglas de referencias, redondeos, fecha tributaria o nuevos campos de guía.
+- DteResult indica estado HTTP/proveedor; **emitted nunca implica aceptación definitiva del SII**.
+- Ninguna operación de base de datos, modificación de rutas ni emisión real.
+
+## Limitaciones para integrar a BASE
+
+En el HEAD inspeccionado no existen App\Models\Document ni App\Models\Company,
+ni tablas de documentos, detalles, relaciones o emisores. El legado depende de
+esos modelos, por lo que no se puede crear un adaptador Eloquent confiable sin
+verificar el esquema real. La V2 es un servicio de API utilizable con arrays ya
+construidos, pero no un flujo de facturación persistente de extremo a extremo.
+No se registra ni se envía ningún dato tributario real sin autorización.
+
+El llamador debe:
+1. Autorizar empresa/tenant, conexión, documento y operación de emisión.
+2. Construir y validar el DTE real con datos pertenecientes al emisor.
+3. Guardar de forma transaccional la clave idempotente, hash de payload y
+   estado de emisión antes de cualquier llamada; impedir emisiones simultáneas.
+4. Guardar TOKEN, folio, XML, PDF y estado en almacenamiento privado según
+   autorizaciones/normativa. Tratar respuestas con outcome "unknown" mediante
+   conciliación, no regenerando claves.
+5. Consultar "status" hasta obtener el estado del SII y registrar sus cambios.
+6. Ejecutar pruebas en el ambiente de desarrollo y verificar códigos tributarios
+   de cada DTE antes de activar en producción.
 
 ~~~php
 use App\Services\Dte\V2\DteService;
 
-// $dte proviene de un mapeador verificado conforme al tipo documental.
-// $apiKey pertenece a la empresa/tenant autorizado.
-// $operationKey es persistente y único por empresa y operación.
+// EJEMPLO CONCEPTUAL: los tres valores deben provenir del contexto
+// autorizado; NO son modelos/rutas confirmados en BASE.
 $result = app(DteService::class)->emit(
     dte: $dte,
     apiKey: $apiKey,
-    idempotencyKey: $operationKey,
+    idempotencyKey: $stableOperationKey,
     environment: 'development',
     resources: ['FOLIO', 'XML', 'PDF'],
 );
 
 if ($result->requiresReconciliation()) {
-    // Consultar estado antes de reintentar.
+    // No volver a emitir sin consultar al proveedor.
 }
-
-// No enviar $result->data a logs ni respuestas públicas sin autorización.
 ~~~
 
-## Trabajos pendientes antes de producción
-1. Incorporar/verificar modelos, tablas, conexión central o tenant, control de permisos y pertenencia del DTE a empresa.
-2. Implementar mappers desde el modelo de negocio real para cada tipo; evitar valores tributarios fijos.
-3. Persistir idempotency key, TOKEN, folio, solicitud/resultado y estado con unicidad por empresa. Diseñar transiciones e impedir doble emisión concurrente.
-4. Guardar XML de forma privada, cifrada/protegida y accesible según obligaciones SII; resguardar PDF.
-5. Completar validación tributaria específica, referencias, descuentos, redondeos, guías, boletas y medios de pago; validar contra SII y OpenFactura.
-6. Confirmar secuencia de estados mediante consulta al proveedor; probar con claves y empresas de desarrollo, nunca con datos reales para pruebas.
-7. Ejecutar suite Pest en Lerd; la revisión estática no equivale a pruebas ejecutadas.
+## Pruebas
 
-Documentación:
+Archivos tests/Unit/Dte/DteDocumentValidatorTest.php y DteServiceTest.php.
+Emplean Http::fake y preventStrayRequests para evitar emisiones por accidente.
+**No se ha ejecutado Pest ni probado el proveedor remoto.**
+
+## Documentación consultada
 - https://docsapi-openfactura.haulmer.com/
-- https://www.sii.cl/servicios_online/1039-descripcion_formato-1184.html
+- https://www.sii.cl/
 - https://laravel.com/docs/12.x/http-client
 
 ## Reversión
-Se creó la rama de respaldo backup/dte-before-refactor-20261030-0801cc7
-desde HEAD 0801cc7c9528e1a0fb48ea4f5bbebceba56fcc71.
-Los archivos del módulo legado permanecen intactos.
+El código legado no fue modificado. Para eliminar la V2 sería suficiente
+revertir sus commits sin modificar tablas (no se agregaron migraciones).

@@ -7,28 +7,22 @@ namespace App\Services\Dte\V2;
 use InvalidArgumentException;
 
 /**
- * Service boundary for preassembled DTE data.
- * The caller MUST authorize the company/tenant and supply its own API key.
- * Does not persist, issue retries, calculate tax or declare SII acceptance.
+ * Explicit-boundary service. Callers must verify permissions and company/tenant
+ * ownership, then persist key/result/XML before exposing actions to users.
  */
 final readonly class DteService
 {
     private const RESOURCES = [
-        'XML', 'PDF', 'TIMBRE', 'LOGO', 'FOLIO', 'RESOLUCION',
-        'LETTER', '80MM', '80MMNOLOGO', 'LETTER_80MM',
+        'TIMBRE', 'FOLIO', 'XML', 'PDF', 'LOGO', 'RESOLUCION',
+        '80MM', 'LETTER', '80MMNOLOGO', 'LETTER_80MM',
     ];
 
     public function __construct(
         private DteDocumentValidator $validator,
+        private DteFactory $factory,
         private OpenFacturaClient $client,
     ) {}
 
-    /**
-     * $idempotencyKey must be persisted/reused by the caller per issuer and operation.
-     *
-     * @param array<string, mixed> $dte
-     * @param list<string> $resources
-     */
     public function emit(
         array $dte,
         string $apiKey,
@@ -37,26 +31,21 @@ final readonly class DteService
         array $resources = ['FOLIO', 'XML'],
     ): DteResult {
         $this->validator->validate($dte);
-
-        if ($resources === []) {
-            throw new InvalidArgumentException('Debe solicitar al menos un recurso de respuesta.');
+        $type = $dte['Encabezado']['IdDoc']['TipoDTE'];
+        $mapped = $this->factory->resolve($type)->map($dte);
+        if ($resources === [] || !array_is_list($resources)) {
+            throw new InvalidArgumentException('Debe solicitar una lista de recursos.');
         }
-
         foreach ($resources as $resource) {
             if (!is_string($resource) || !in_array($resource, self::RESOURCES, true)) {
-                throw new InvalidArgumentException('Recurso de respuesta OpenFactura inválido.');
+                throw new InvalidArgumentException('Recurso OpenFactura no permitido.');
             }
         }
 
-        return $this->client->emit(
-            payload: [
-                'response' => array_values(array_unique($resources)),
-                'dte' => $dte,
-            ],
-            apiKey: $apiKey,
-            idempotencyKey: $idempotencyKey,
-            environment: $environment,
-        );
+        return $this->client->emit([
+            'response' => array_values(array_unique($resources)),
+            'dte' => $mapped,
+        ], $apiKey, $idempotencyKey, $environment);
     }
 
     public function get(
@@ -67,13 +56,21 @@ final readonly class DteService
         string $apiKey,
         string $environment = 'development',
     ): DteResult {
-        return $this->client->getDocument(
-            rut: $rut,
-            type: $type,
-            folio: $folio,
-            format: $format,
-            apiKey: $apiKey,
-            environment: $environment,
-        );
+        return $this->client->document($rut, $type, $folio, $format, $apiKey, $environment);
+    }
+
+    public function issued(array $filters, string $apiKey, string $environment = 'development'): DteResult
+    {
+        return $this->client->listDocuments('issued', $filters, $apiKey, $environment);
+    }
+
+    public function received(array $filters, string $apiKey, string $environment = 'development'): DteResult
+    {
+        return $this->client->listDocuments('received', $filters, $apiKey, $environment);
+    }
+
+    public function organization(string $apiKey, string $environment = 'development'): DteResult
+    {
+        return $this->client->organization($apiKey, $environment);
     }
 }
