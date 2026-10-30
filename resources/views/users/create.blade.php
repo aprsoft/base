@@ -5,7 +5,7 @@
 
     <div class="space-y-6">      
       
-        <livewire:user.user-create/>
+        <livewire:user.create-user/>
 
     </div>
       

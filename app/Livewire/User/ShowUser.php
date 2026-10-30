@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
-class UserShow extends Component
+class ShowUser extends Component
 {
     #[Locked]
     public int $userId;
@@ -26,7 +26,7 @@ class UserShow extends Component
         $user = User::withTrashed()->with('roles')->findOrFail($this->userId);
         Gate::authorize('view', $user);
 
-        return view('livewire.user.user-show', [
+        return view('livewire.user.show-user', [
             'user' => $user,
             'isSuperAdminTarget' => $user->hasRole('SuperAdmin', 'web'),
             'roles' => $user->roles->where('guard_name', 'web')->sortBy('name'),

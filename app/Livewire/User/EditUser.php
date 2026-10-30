@@ -19,7 +19,7 @@ use Livewire\Component;
 use Spatie\Permission\Models\Role;
 use Throwable;
 
-class UserEdit extends Component
+class EditUser extends Component
 {
     #[Locked]
     public int $userId;
@@ -518,7 +518,7 @@ class UserEdit extends Component
 
         $selectedIds = array_map('intval', $this->roleIds);
 
-        return view('livewire.user.user-edit', [
+        return view('livewire.user.edit-user', [
             'user' => $user,
             'isSuspended' => $user->trashed(),
             'canUpdate' => $canUpdate,

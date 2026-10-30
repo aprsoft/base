@@ -18,7 +18,7 @@ use Livewire\Component;
 use Spatie\Permission\Models\Role;
 use Throwable;
 
-class UserCreate extends Component
+class CreateUser extends Component
 {
     public string $name = '';
     public string $email = '';
@@ -337,7 +337,7 @@ class UserCreate extends Component
         $roles = $this->assignableRoles();
         $selectedIds = array_map('intval', $this->roleIds);
 
-        return view('livewire.user.user-create', [
+        return view('livewire.user.create-user', [
             'roles' => $roles,
 
             'selectedRoles' => $roles->filter(

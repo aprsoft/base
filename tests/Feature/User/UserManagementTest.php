@@ -1,7 +1,8 @@
 <?php
 
-use App\Livewire\User\UserCreate;
-use App\Livewire\User\UserEdit;
+use App\Livewire\User\CreateUser;
+use App\Livewire\User\EditUser;
+use App\Livewire\User\ShowUser;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Password;
@@ -34,13 +35,13 @@ it('niega el modulo usuarios a una cuenta sin autorizacion', function (): void {
 
 it('permite abrir el formulario de usuarios a SuperAdmin', function (): void {
     Livewire::actingAs($this->superAdmin)
-        ->test(UserCreate::class)
+        ->test(CreateUser::class)
         ->assertStatus(200);
 });
 
 it('valida los datos obligatorios antes de crear un usuario', function (): void {
     Livewire::actingAs($this->superAdmin)
-        ->test(UserCreate::class)
+        ->test(CreateUser::class)
         ->call('confirmSave')
         ->assertHasErrors(['name', 'email', 'roleIds']);
 });
@@ -49,7 +50,7 @@ it('impide registrar otro usuario con correo duplicado', function (): void {
     $existing = User::factory()->create();
 
     Livewire::actingAs($this->superAdmin)
-        ->test(UserCreate::class)
+        ->test(CreateUser::class)
         ->set('name', 'Nuevo usuario')
         ->set('email', $existing->email)
         ->set('roleIds', [Role::create([
@@ -67,7 +68,7 @@ it('crea un usuario con rol autorizado y solicita el enlace de acceso', function
         ->andReturn(Password::RESET_LINK_SENT);
 
     Livewire::actingAs($this->superAdmin)
-        ->test(UserCreate::class)
+        ->test(CreateUser::class)
         ->set('name', 'Nuevo operador')
         ->set('email', 'nuevo.operador@example.com')
         ->set('roleIds', [(int) $role->id])
@@ -98,7 +99,7 @@ it('no permite crear usuarios con un rol que otorgue permisos ajenos', function 
     ]));
 
     Livewire::actingAs($actor)
-        ->test(UserCreate::class)
+        ->test(CreateUser::class)
         ->assertViewHas('roles', fn ($roles): bool =>
             ! $roles->contains('id', $privilegedRole->id)
         )
@@ -113,7 +114,7 @@ it('no permite crear usuarios con un rol que otorgue permisos ajenos', function 
 
 it('impide editar o suspender la propia cuenta', function (): void {
     Livewire::actingAs($this->superAdmin)
-        ->test(UserEdit::class, ['user' => $this->superAdmin])
+        ->test(EditUser::class, ['user' => $this->superAdmin])
         ->assertForbidden();
 });
 
@@ -132,14 +133,14 @@ it('suspende y restaura un usuario mediante borrado logico', function (): void {
     $target = User::factory()->create();
 
     Livewire::actingAs($this->superAdmin)
-        ->test(UserEdit::class, ['user' => $target])
+        ->test(EditUser::class, ['user' => $target])
         ->call('suspend', (int) $target->id)
         ->assertRedirectToRoute('users.index');
 
     expect(User::withTrashed()->findOrFail($target->id)->trashed())->toBeTrue();
 
     Livewire::actingAs($this->superAdmin)
-        ->test(UserEdit::class, [
+        ->test(EditUser::class, [
             'user' => User::withTrashed()->findOrFail($target->id),
         ])
         ->call('restore', (int) $target->id)
@@ -153,7 +154,7 @@ it('rechaza el identificador equivocado al suspender usuarios', function (): voi
     $other = User::factory()->create();
 
     Livewire::actingAs($this->superAdmin)
-        ->test(UserEdit::class, ['user' => $target])
+        ->test(EditUser::class, ['user' => $target])
         ->call('suspend', (int) $other->id)
         ->assertForbidden();
 
@@ -166,4 +167,27 @@ it('impide el borrado fisico de usuarios mediante la politica', function (): voi
 
     expect(Gate::forUser($this->superAdmin)->allows('delete', $target))->toBeFalse()
         ->and(Gate::forUser($this->superAdmin)->allows('forceDelete', $target))->toBeFalse();
+});
+
+it('resuelve las paginas de crear editar y mostrar con los componentes renombrados', function (): void {
+    $target = User::factory()->create();
+
+    $this->actingAs($this->superAdmin)
+        ->get(route('users.create'))
+        ->assertOk()
+        ->assertSee('Nuevo usuario');
+
+    $this->actingAs($this->superAdmin)
+        ->get(route('users.edit', ['user' => $target->id]))
+        ->assertOk()
+        ->assertSee('Editar usuario');
+
+    $this->actingAs($this->superAdmin)
+        ->get(route('users.show', ['user' => $target->id]))
+        ->assertOk()
+        ->assertSee('Perfil del usuario');
+
+    Livewire::actingAs($this->superAdmin)
+        ->test(ShowUser::class, ['user' => $target])
+        ->assertStatus(200);
 });

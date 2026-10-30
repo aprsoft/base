@@ -6,7 +6,7 @@
 
 ## Objetivo
 
-Añadir a `UserShow` tres acciones: descargar, visualizar/imprimir desde el visor del navegador y solicitar el envío del perfil por correo electrónico. La implementación se organiza en `app/Pdf/`, `app/Services/Pdf/`, `app/Http/Controllers/PdfController.php` y `app/Livewire/Pdf/`.
+Añadir a `ShowUser` tres acciones: descargar, visualizar/imprimir desde el visor del navegador y solicitar el envío del perfil por correo electrónico. La implementación se organiza en `app/Pdf/`, `app/Services/Pdf/`, `app/Http/Controllers/PdfController.php` y `app/Livewire/Pdf/`.
 
 Los identificadores de documento se permiten explícitamente en `PdfRegistry`; el único tipo registrado inicialmente es `user.profile`. Para nuevos tipos de documentos hay que añadir una definición que implemente `PdfDocument`.
 
