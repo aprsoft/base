@@ -118,15 +118,14 @@ it('impide editar o suspender la propia cuenta', function (): void {
 });
 
 it('protege la cuenta principal de identificador uno', function (): void {
-    // El primer usuario del test es la cuenta principal.
-    expect((int) $this->superAdmin->id)->toBe(1);
+    // Crear explícitamente la cuenta principal: RefreshDatabase no reinicia
+    // necesariamente AUTO_INCREMENT entre tests.
+    $primary = User::factory()->create(['id' => 1]);
 
-    $anotherAdmin = User::factory()->create();
-    $anotherAdmin->assignRole(Role::findByName('SuperAdmin', 'web'));
-
-    expect(Gate::forUser($anotherAdmin)->allows('view', $this->superAdmin))->toBeFalse()
-        ->and(Gate::forUser($anotherAdmin)->allows('update', $this->superAdmin))->toBeFalse()
-        ->and(Gate::forUser($anotherAdmin)->allows('suspend', $this->superAdmin))->toBeFalse();
+    expect((int) $primary->id)->toBe(1)
+        ->and(Gate::forUser($this->superAdmin)->allows('view', $primary))->toBeFalse()
+        ->and(Gate::forUser($this->superAdmin)->allows('update', $primary))->toBeFalse()
+        ->and(Gate::forUser($this->superAdmin)->allows('suspend', $primary))->toBeFalse();
 });
 
 it('suspende y restaura un usuario mediante borrado logico', function (): void {
