@@ -55,7 +55,7 @@ class DteGetManager
             ]);
 
             $rawResponse = curl_exec($curl);
-          dd($rawResponse);
+         
 
             if ($rawResponse === false) {
                 ErrorLog::create([
