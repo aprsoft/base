@@ -1,6 +1,7 @@
 
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ErrorController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PermissionController;
@@ -30,9 +31,19 @@ Route::get('/', function () {
 
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/dashboard', function () {
-        return view('dashboard', ['title' => 'Dashboard']);
-    })->name('dashboard');
+    // Route::get('/dashboard', function () {
+    //     return view('dashboard', ['title' => 'Dashboard']);
+    // })->name('dashboard');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard 
+    |--------------------------------------------------------------------------
+    */
+
+
+
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     /*
     |--------------------------------------------------------------------------
