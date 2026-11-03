@@ -27,6 +27,8 @@ class BoletaAfecta
         $company  = Company::first();
         $customer = $this->document->customer;
 
+      
+
         $dte = [
             'Encabezado' => [
                 'IdDoc' => [
@@ -48,10 +50,13 @@ class BoletaAfecta
                     'DirRecep'    => $customer->direccion_cliente,
                     'CmnaRecep'   => $customer->comuna,
                 ],
-                'Totales' => [                   
-                    'MntNeto'      => $this->document->neto,                                   
-                    'IVA'          => $this->document->iva,                   
-                    'MntTotal'     => $this->document->total,
+                'Totales' => [   
+                    "MntExe"        => $this->document->exento,                  
+                    'MntNeto'       => $this->document->neto,                                   
+                    'IVA'           => $this->document->iva,                   
+                    'MntTotal'      => $this->document->total,
+                    "TotalPeriodo"  => $this->document->total,
+                    "SaldoAnterior" => 0, 
                     
                 ],
             ],

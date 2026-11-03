@@ -19,6 +19,7 @@ return new class extends Migration {
             $table->integer('TpoTranCompra')->nullable();
             $table->integer('TpoTranVenta')->nullable();
             $table->integer('CdgSIISucur')->nullable();
+            $table->unsignedBigInteger('customer_id')->nullable();
             $table->unsignedBigInteger('expense_id')->nullable();
             $table->unsignedBigInteger('supplier_id')->nullable();
             $table->string('RUTSolicita', 191)->nullable();         

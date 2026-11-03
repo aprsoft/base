@@ -13,11 +13,11 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-<<<<<<< Updated upstream
+            TaxeSeeder::class,
+            ServiceSeeder::class,            
+            CustomerSeeder::class,
             TypedocumentSeeder::class,
-=======
             CompanySeeder::class,
->>>>>>> Stashed changes
             AdminRolePermissionSeeder::class,
             ExecutiveRolePermissionSeeder::class,
             UserSeeder::class,

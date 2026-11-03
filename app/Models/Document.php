@@ -7,6 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 class Document extends Model
 {
     protected $guarded = ['id'];
+
+    public function getExentoAttribute()
+    {
+        if($this->customer_id){
+            return round($this->details()->servicios()->sum('valor_exento'));
+        }
+         if($this->supplier_id){
+            return round($this->details()->sum('valor_exento'));
+        }
+        
+    }
    
 
     // Solo entrega la suma de los detalles de los servicios, el resto del los detalles los deja fuera(subtotales informativos, descuentos, subsidios,etc)
@@ -30,7 +41,7 @@ class Document extends Model
     public function getTotalAttribute(): int
     {
        //dd(round($this->getNetoAttribute() + $this->getIvaAttribute()));
-                return round($this->getNetoAttribute() + $this->getIvaAttribute());
+                return round($this->getNetoAttribute() + $this->getIvaAttribute() +  $this->getExentoAttribute());
 
     }
 
@@ -100,20 +111,20 @@ class Document extends Model
         return $this->belongsTo(Customer::class);
     }  
 
-    public function supplier()
-    {
-        return $this->belongsTo(Supplier::class);
-    }
+    // public function supplier()
+    // {
+    //     return $this->belongsTo(Supplier::class);
+    // }
 
-    public function meter()
-    {
-        return $this->belongsTo(Meter::class);
-    }
+    // public function meter()
+    // {
+    //     return $this->belongsTo(Meter::class);
+    // }
 
-    public function reading()
-    {
-        return $this->belongsTo(Reading::class);
-    }
+    // public function reading()
+    // {
+    //     return $this->belongsTo(Reading::class);
+    // }
 
     public function typedocument() 
     {

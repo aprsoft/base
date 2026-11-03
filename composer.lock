@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5ad1b2d484cbfb16d354c01009ef1ea7",
+    "content-hash": "45aea1bd7f262f69ecfca7e646a92786",
     "packages": [
         {
             "name": "blade-ui-kit/blade-heroicons",
@@ -660,6 +660,74 @@
                 }
             ],
             "time": "2025-03-06T22:45:56+00:00"
+        },
+        {
+            "name": "freshwork/chilean-bundle",
+            "version": "v3.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/freshworkstudio/ChileanBundle.git",
+                "reference": "9953bb3c675427410fef9ce6a2aed23374509625"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/freshworkstudio/ChileanBundle/zipball/9953bb3c675427410fef9ce6a2aed23374509625",
+                "reference": "9953bb3c675427410fef9ce6a2aed23374509625",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.13",
+                "orchestra/testbench": "^9.0|^10.0",
+                "pestphp/pest": "^3.0",
+                "phpstan/phpstan": "^2.0",
+                "rector/rector": "^2.0"
+            },
+            "suggest": {
+                "illuminate/support": "Required to use the Laravel integration (validation rule, facade and cast)."
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Rut": "Freshwork\\ChileanBundle\\Facades\\Rut"
+                    },
+                    "providers": [
+                        "Freshwork\\ChileanBundle\\Laravel\\ChileanBundleServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Freshwork\\ChileanBundle\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Gonzalo De Spirito | Freshwork Studio Chile",
+                    "email": "gonzalo@freshworkstudio.com"
+                }
+            ],
+            "description": "A PHP composer package with Chilean validations, common variables, etc. (RUT, IVA, ETC). Ready for Laravel. Grande chile ctm :)",
+            "keywords": [
+                "chile",
+                "freshwork",
+                "laravel",
+                "rut",
+                "tools",
+                "validation"
+            ],
+            "support": {
+                "issues": "https://github.com/freshworkstudio/ChileanBundle/issues",
+                "source": "https://github.com/freshworkstudio/ChileanBundle/tree/v3.0.0"
+            },
+            "time": "2026-07-11T05:57:43+00:00"
         },
         {
             "name": "fruitcake/php-cors",

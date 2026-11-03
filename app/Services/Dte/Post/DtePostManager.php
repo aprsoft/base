@@ -7,7 +7,7 @@ use App\Models\Document;
 use App\Models\ErrorLog;
 use App\Services\Dte\DteConexion;
 use App\Services\Dte\DteResponse as DteResponse;
-
+use App\Services\Dte\Post\DtePostApi;
 
 class DtePostManager
 {    
@@ -18,7 +18,6 @@ class DtePostManager
     public function __construct()
     {
         $this->company = Company::query()->firstOrFail();
-        // dd($this->company->url);
     }
 
     public function post(Document $document)
@@ -34,37 +33,20 @@ class DtePostManager
                     message: 'No hay conexión a internet o el proveedor DTE no responde',
                     errors: []
                 );
-            }
+            }         
 
-            $payload = DteFactory::resolve($document)->mapJsonDte();    
-
-            $curl = curl_init();
-            curl_setopt_array($curl, [
-                CURLOPT_URL            => $this->company->url,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING       => "",
-                CURLOPT_MAXREDIRS      => 10,
-                CURLOPT_TIMEOUT        => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST  => "POST",
-                CURLOPT_POSTFIELDS     => $payload,
-                CURLOPT_HTTPHEADER     => [
-                    "apikey:".$this->company->apikey,
-                    "Idempotency-Key:".$document->id,
-                    "Content-Type: application/json",
-                ],
-            ]);
-            
-            $rawResponse = curl_exec($curl);        
+            $payload = DteFactory::resolve($document)->mapJsonDte();   
+// dd($payload);
+            $response = DtePostApi::curl($payload, $this->company,$document->id);
+              dd($response);
           
 
-            if ($rawResponse === false) {
-                ErrorLog::create([
-                    'message'   => curl_error($curl),
-                    'exception' => 'CurlError',
-                ]);
-            }
+            // if ($response === false) {
+            //     ErrorLog::create([
+            //         'message'   => curl_error($curl),
+            //         'exception' => 'CurlError',
+            //     ]);
+            // }
 
             if (empty($rawResponse)) {
                 return new DteResponse(

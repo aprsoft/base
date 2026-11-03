@@ -14,6 +14,8 @@ return new class extends Migration {
             $table->unsignedBigInteger('service_id')->nullable();
             $table->enum('estado_detalle', ['VIGENTE','NO VIGENTE'])->default('VIGENTE');
             $table->integer('cantidad')->nullable();
+            $table->integer('valor_exento')->nullable();
+            $table->integer('valor_neto')->nullable();
             $table->integer('valor')->nullable();
             $table->integer('neto')->nullable();
             $table->integer('iva')->nullable();

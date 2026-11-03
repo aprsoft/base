@@ -48,10 +48,13 @@ class BoletaExenta
                     'DirRecep'    => $customer->direccion_cliente,
                     'CmnaRecep'   => $customer->comuna,
                 ],
-                'Totales' => [
-                    'MntExe'   => $this->document->neto,
-                    'MntTotal' => $this->document->neto,
-                ],
+                "Totales" => [
+                    "MntExe"        => $this->document->neto,   
+                    "MntTotal"      => $this->document->neto,   
+                    "TotalPeriodo"  => $this->document->neto,   
+                    "SaldoAnterior" => $this->document->neto,   
+                    "VlrPagar" => $this->document->neto,
+                ]
             ],
             'Detalle'      => $this->mapDetails(),
             'DscRcgGlobal' => $this->mapDiscount(),

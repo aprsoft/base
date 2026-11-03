@@ -11,7 +11,8 @@ return new class extends Migration {
             $table->id();
             $table->string('name', 191);
             $table->unsignedBigInteger('taxe_id')->nullable();
-            
+            $table->unsignedBigInteger('servicestate_id')->nullable();
+             $table->unsignedBigInteger('typeservice_id')->nullable();
             $table->enum('estado_servicio', ['VIGENTE','NO VIGENTE'])->default('VIGENTE');
             $table->enum('tipo_servicio', ['BASICOS','SERVICIOS','PROVEEDORES','SUBSIDIO','CONVENIO'])->default('SERVICIOS');
             $table->unsignedInteger('tramo_inicial')->nullable();
