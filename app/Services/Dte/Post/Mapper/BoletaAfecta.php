@@ -27,7 +27,7 @@ class BoletaAfecta
         $company  = Company::first();
         $customer = $this->document->customer;
 
-      
+    //   dd($this->document->iva);
 
         $dte = [
             'Encabezado' => [
@@ -79,10 +79,11 @@ class BoletaAfecta
             ->get()
             ->map(fn ($detail, $index) => [
                 'NroLinDet' => $index + 1,
+                $detail->IndExe?? 'IndExe' => $detail->IndExe,
                 'NmbItem'   => $detail->detalle,
-                'QtyItem'   => $detail->cantidad,
-                'PrcItem'   => $detail->valor,
-                'MontoItem' => $detail->cantidad * $detail->valor,
+                'QtyItem'   => $detail->QtyItem,
+                'PrcItem'   => $detail->PrcItem,
+                'MontoItem' => $detail->QtyItem * $detail->PrcItem,
             ])
             ->values()
             ->toArray();

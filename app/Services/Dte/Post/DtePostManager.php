@@ -4,10 +4,11 @@ namespace App\Services\Dte\Post;
 
 use App\Models\Company;
 use App\Models\Document;
-use App\Models\ErrorLog;
+use App\Models\ErrorDte;
 use App\Services\Dte\DteConexion;
 use App\Services\Dte\DteResponse as DteResponse;
 use App\Services\Dte\Post\DtePostApi;
+use Throwable;
 
 class DtePostManager
 {    
@@ -22,7 +23,7 @@ class DtePostManager
 
     public function post(Document $document)
     { 
-        
+    
         try {          
         
             $apiUrl = $this->company->url;
@@ -33,12 +34,32 @@ class DtePostManager
                     message: 'No hay conexión a internet o el proveedor DTE no responde',
                     errors: []
                 );
-            }         
+            } 
 
             $payload = DteFactory::resolve($document)->mapJsonDte();   
-// dd($payload);
             $response = DtePostApi::curl($payload, $this->company,$document->id);
-              dd($response);
+            
+
+            if (isset($response['WARNING']) ) {
+
+                ErrorDte::create([
+                    'document_id' => $document->id,
+                    'warning'     => json_encode($response['WARNING']),
+                    
+                ]);
+
+               
+
+            }else {
+
+            ErrorDte::create([
+                    'document_id' => $document->id,
+                    'error'     => json_encode($response),
+                    
+                ]);
+
+
+            }
           
 
             // if ($response === false) {
@@ -76,7 +97,7 @@ class DtePostManager
                 
             );
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             
             throw $e;           
         }

@@ -27,6 +27,7 @@ class BoletaExenta
         $this->company  = Company::first();
         $customer = $this->document->customer;
 
+
         $dte = [
             'Encabezado' => [
                 'IdDoc' => [
@@ -49,17 +50,18 @@ class BoletaExenta
                     'CmnaRecep'   => $customer->comuna,
                 ],
                 "Totales" => [
-                    "MntExe"        => $this->document->neto,   
-                    "MntTotal"      => $this->document->neto,   
-                    "TotalPeriodo"  => $this->document->neto,   
-                    "SaldoAnterior" => $this->document->neto,   
-                    "VlrPagar" => $this->document->neto,
+                    "MntExe"        => $this->document->exento,   
+                    "MntTotal"      => $this->document->exento,   
+                    "TotalPeriodo"  => $this->document->exento,   
+                    "SaldoAnterior" => 0,  
+                    "VlrPagar"      => $this->document->exento,
                 ]
             ],
             'Detalle'      => $this->mapDetails(),
             'DscRcgGlobal' => $this->mapDiscount(),
             'SubTotInfo'   => $this->mapInformativeSubtotals(),
         ];
+
 
         return json_encode([
             'response' => ['TIMBRE', 'FOLIO'],
@@ -74,11 +76,12 @@ class BoletaExenta
             ->servicios()
             ->get()
             ->map(fn ($detail, $index) => [
-                'NroLinDet' => $index + 1,
-                'NmbItem'   => $detail->detalle,
-                'QtyItem'   => $detail->cantidad,
-                'PrcItem'   => $detail->valor,
-                'MontoItem' => $detail->cantidad * $detail->valor,
+                'NroLinDet'     => $index + 1,
+                'IndExe'        => $detail->IndExe,
+                'NmbItem'       => $detail->detalle,
+                'QtyItem'       => $detail->QtyItem,
+                'PrcItem'       => $detail->PrcNetoItem,
+                'MontoItem'     => $detail->QtyItem * $detail->PrcNetoItem,
             ])
             ->values()
             ->toArray();

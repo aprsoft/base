@@ -10,18 +10,24 @@ return new class extends Migration {
         Schema::create('details', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('nroLinDet')->nullable();
+            $table->unsignedInteger('IndExe')->nullable();
             $table->unsignedBigInteger('document_id');
             $table->unsignedBigInteger('service_id')->nullable();
-            $table->enum('estado_detalle', ['VIGENTE','NO VIGENTE'])->default('VIGENTE');
-            $table->integer('cantidad')->nullable();
-            $table->integer('valor_exento')->nullable();
-            $table->integer('valor_neto')->nullable();
-            $table->integer('valor')->nullable();
-            $table->integer('neto')->nullable();
-            $table->integer('iva')->nullable();
+            $table->unsignedInteger('DscItem')->nullable();
+            $table->unsignedInteger('UnmdItem')->nullable();
+            $table->unsignedInteger('DescuentoPct')->nullable();
+            $table->unsignedInteger('DescuentoMonto')->nullable();
+            $table->unsignedInteger('RecargoPct')->nullable();
+            $table->unsignedInteger('RecargoMonto')->nullable();
+            $table->unsignedInteger('QtyItem')->nullable();
+            $table->unsignedInteger('PrcNetoItem')->nullable();
+            $table->unsignedInteger('PrcItem')->nullable();
+            $table->unsignedInteger('MontoNetoItem')->nullable(); 
+            $table->unsignedInteger('MontoItem')->nullable();  
+            $table->integer('ivaItem')->nullable();
             $table->unsignedInteger('porcentaje_iva')->nullable();
-            $table->integer('total')->nullable();
             $table->string('detalle', 191)->nullable();
+            $table->enum('estado_detalle', ['VIGENTE','NO VIGENTE'])->default('VIGENTE');
             $table->unsignedInteger('user_id')->nullable();
             $table->timestamps();
 

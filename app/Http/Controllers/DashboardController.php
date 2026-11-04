@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
+use App\Services\Document\serviceBoletaAfecta;
+use App\Services\Document\serviceBoletaExenta;
 use App\Services\Dte\Post\DtePostManager;
-use App\Services\Document\servicedocument;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -13,13 +14,16 @@ class DashboardController extends Controller
     {  
  
 
-        $serviceDocument = new serviceDocument();
-        $document = $serviceDocument->createDocument(17);
+        $serviceDocument = new serviceBoletaExenta();
+        $document = $serviceDocument->createDocument(12);
+
+        // $serviceDocument = new serviceBoletaAfecta();
+        // $document = $serviceDocument->createDocument(17);
         
         $DtePostManager = new DtePostManager();
         $DtePostManager->post($document);
        
-
+        dd(8);
 
         return view('dashboard');
     }

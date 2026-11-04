@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Document extends Model
 {
@@ -11,7 +12,7 @@ class Document extends Model
     public function getExentoAttribute()
     {
         if($this->customer_id){
-            return round($this->details()->servicios()->sum('valor_exento'));
+            return round($this->details()->servicios()->whereNotNull('IndExe')->sum('MontoNetoItem'));
         }
          if($this->supplier_id){
             return round($this->details()->sum('valor_exento'));
@@ -24,7 +25,7 @@ class Document extends Model
     public function getNetoAttribute()
     {
         if($this->customer_id){
-            return round($this->details()->servicios()->sum('neto'));
+            return round($this->details()->servicios()->whereNull('IndExe')->sum(DB::raw('MontoNetoItem / 1.19')));
         }
          if($this->supplier_id){
             return round($this->details()->sum('neto'));
@@ -35,7 +36,12 @@ class Document extends Model
     public function getIvaAttribute()
     {
         // return round($this->getNetoAttribute() * 0.19);
-        return round($this->details()->servicios()->sum('iva'));
+        return round(
+            $this->details()
+                ->servicios()
+                ->whereNull('IndExe')
+                ->sum(DB::raw('MontoItem - (MontoItem / 1.19)'))
+        );
     }
 
     public function getTotalAttribute(): int
