@@ -15,12 +15,14 @@ class DteApiResponse
 
         if (isset($response['TIMBRE']) && !isset($response['WARNING'])) {
 
-            return true;           
+            return new DteResponse(
+                accepted: true,
+                folio: $response['FOLIO'],         
+                
+            );          
 
         }
         if (isset($response['TIMBRE']) && isset($response['WARNING'])) {
-
-
 
             ErrorDte::create([
                 'document_id' => $document->id,
@@ -28,13 +30,12 @@ class DteApiResponse
             ]);  
 
             
-                return new DteResponse(
-                    accepted: true,
-                    folio: $response['FOLIO'],                    
-                    warnings: $response['WARNING'],
-                   
-                );
-           
+            return new DteResponse(
+                accepted: true,
+                folio: $response['FOLIO'],                    
+                warnings: $response['WARNING'],
+                
+            );           
 
         }else {
 
@@ -43,7 +44,12 @@ class DteApiResponse
                     'error'     => json_encode($response),                    
             ]);
 
-            return false;
+            return new DteResponse(
+                accepted: false,
+                message:$response['error']['message'],
+                errors: $response['error'],
+                
+            );   
         }       
     } 
 }
