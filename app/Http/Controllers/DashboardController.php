@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Document;
 use App\Services\Document\serviceBoletaAfecta;
 use App\Services\Document\serviceBoletaExenta;
-use App\Services\Dte\Post\DtePostManager;
+use App\Services\Dte\Post\DteApiPostManager;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -20,8 +20,8 @@ class DashboardController extends Controller
         // $serviceDocument = new serviceBoletaAfecta();
         // $document = $serviceDocument->createDocument(17);
         
-        $DtePostManager = new DtePostManager();
-        $DtePostManager->post($document);
+        $dteApiPostManager = new DteApiPostManager();
+        $dteApiPostManager->send($document);
        
         dd(8);
 

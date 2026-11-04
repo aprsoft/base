@@ -6,11 +6,11 @@ use App\Models\Document;
 use App\Services\Dte\Post\Mapper\BoletaExenta;
 use App\Services\Dte\Post\Mapper\BoletaAfecta;
 use App\Services\Dte\Post\Mapper\FacturaAfecta;
-use App\Services\Dte\Post\Mapper\facturaExenta;
+use App\Services\Dte\Post\Mapper\FacturaExenta;
 use App\Services\Dte\Post\Mapper\NotaCredito;
 use App\Services\Dte\Post\Mapper\NotaDebito;
 
-class DteFactory
+class DteApiFactory
 {
     public static function resolve(Document $document)
     {

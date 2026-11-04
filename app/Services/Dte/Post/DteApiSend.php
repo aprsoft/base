@@ -3,10 +3,10 @@
 namespace App\Services\Dte\Post;
 
 
-class DtePostApi
+class DteApiSend
 {  
     
-    public static function curl($payload, $company, $IdempotencyKey)
+    public static function send($payload, $company, $IdempotencyKey)
     {   
          $curl = curl_init();
             curl_setopt_array($curl, [
@@ -26,9 +26,9 @@ class DtePostApi
                 ],
             ]);
 
-            $rawResponse = curl_exec($curl); 
+            $response = curl_exec($curl); 
 
-            return json_decode($rawResponse, true);   
+            return json_decode($response, true);   
     }   
 
 }

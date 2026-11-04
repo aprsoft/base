@@ -4,7 +4,7 @@ namespace App\Services\Dte;
 
 use App\Services\Dte\DteResponse as DteDteResponse;
 
-class DteConexion
+class DteApiConexion
 {    
 
     public static function hasConexion(string $apiUrl, int $timeout = 3): bool
