@@ -5,8 +5,8 @@ namespace App\Services\Dte\Get;
 use App\Models\Company;
 use App\Models\Document;
 use App\Models\ErrorLog;
-use App\Services\Dte\DteConexion;
-use App\Services\Dte\DteResponse;
+use App\Services\Dte\Common\DteApiConexion;
+use App\Services\Dte\Common\DteResponse;
 use Illuminate\Database\Eloquent\Collection;
 
 class DteGetManager
@@ -22,7 +22,7 @@ class DteGetManager
     {
         $apiUrl = $this->company->url_document_received;
 
-        if (!DteConexion::hasConexion($apiUrl)) {
+        if (!DteApiConexion::hasConexion($apiUrl)) {
             return new DteResponse(
                 accepted: false,
                 message: 'No hay conexión a internet o el proveedor DTE no responde',
@@ -185,7 +185,7 @@ class DteGetManager
 
         $baseUrl = rtrim($this->company->url_document_detail, '/');
 
-        if (!DteConexion::hasConexion($baseUrl)) {
+        if (!DteApiConexion::hasConexion($baseUrl)) {
             return new DteResponse(
                 accepted: false,
                 message: 'No hay conexión a internet o el proveedor DTE no responde',

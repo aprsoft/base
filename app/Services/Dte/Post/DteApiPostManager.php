@@ -4,9 +4,11 @@ namespace App\Services\Dte\Post;
 
 use App\Models\Company;
 use App\Models\Document;
-use App\Services\Dte\DteConexion;
-use App\Services\Dte\DteResponse as DteResponse;
-use App\Services\Dte\Post\DteApiResponse;
+use App\Services\Dte\Common\DteApiConexion;
+use App\Services\Dte\Common\DteResponse;
+use App\Services\Dte\Post\Class\DteApiResponse;
+use App\Services\Dte\Post\Class\DteApiSend;
+use App\Services\Dte\Get\DteApiFactory;
 
 class DteApiPostManager
 {    
@@ -24,7 +26,7 @@ class DteApiPostManager
         
             // $apiUrl = $this->company->url;
 
-            // if (!DteConexion::hasConexion($apiUrl)) {
+            // if (!DteApiConexion::hasConexion($apiUrl)) {
             //     return new DteResponse(
             //         accepted: false,
             //         message: 'No hay conexión a internet o el proveedor DTE no responde',

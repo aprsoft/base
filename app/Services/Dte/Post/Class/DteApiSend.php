@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Dte\Post;
+namespace App\Services\Dte\Post\Class;
 
 
 class DteApiSend

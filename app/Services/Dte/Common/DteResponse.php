@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Dte;
+namespace App\Services\Dte\Common;
 
 use Illuminate\Contracts\Support\Arrayable;
 

@@ -1,8 +1,6 @@
 <?php
 
-namespace App\Services\Dte;
-
-use App\Services\Dte\DteResponse as DteDteResponse;
+namespace App\Services\Dte\Common;
 
 class DteApiConexion
 {    

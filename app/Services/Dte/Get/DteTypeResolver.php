@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Dte;
+namespace App\Services\Dte\Get;
 
 class DteTypeResolver
 {
