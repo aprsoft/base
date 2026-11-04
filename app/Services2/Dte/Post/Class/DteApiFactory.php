@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Dte\Get;
+namespace App\Services\Dte\Post\Class;
 
 use App\Models\Document;
 use App\Services\Dte\Post\Mapper\BoletaExenta;

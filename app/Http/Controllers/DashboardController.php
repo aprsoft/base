@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Document;
 use App\Services\Document\serviceBoletaAfecta;
 use App\Services\Document\serviceBoletaExenta;
-use App\Services\Dte\Post\DteApiPostManager;
-use Illuminate\Http\Request;
+
+use App\Services\Dte\Post\DteSendingManager;
 
 class DashboardController extends Controller
 {
@@ -20,10 +20,11 @@ class DashboardController extends Controller
         // $serviceDocument = new serviceBoletaAfecta();
         // $document = $serviceDocument->createDocument(17);
         
-        $dteApiPostManager = new DteApiPostManager();
-        $dteApiPostManager->send($document);
+        $dteApiPostManager = new DteSendingManager();
+        $response = $dteApiPostManager->send($document);
+        dd($response->toArray());
        
-        dd(8);
+        
 
         return view('dashboard');
     }
