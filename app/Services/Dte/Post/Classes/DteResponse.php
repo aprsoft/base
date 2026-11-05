@@ -11,8 +11,8 @@ class DteResponse implements Arrayable
         public ?int    $document_id = null,    
         public ?int    $folio = null,
         public ?string $message = null,
-        public ?array   $warnings = [],
-        public ?array   $errors = [],
+        public ?array   $warnings = null,
+        public ?array   $errors = null,
        
     ) {}
 

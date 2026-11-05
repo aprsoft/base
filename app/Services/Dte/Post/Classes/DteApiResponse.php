@@ -9,7 +9,7 @@ use App\Services\Dte\Post\Classes\DteResponse;
 
 class DteApiResponse
 { 
-    public static function manager($response, Document $document)
+    public static function manager(array $response, Document $document)
     {
       
 
@@ -47,7 +47,6 @@ class DteApiResponse
             return new DteResponse(
                 accepted: false,
                 message:$response['error']['message'],
-                errors: $response['error'],
                 
             );   
         }       
