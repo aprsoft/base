@@ -3,10 +3,11 @@
 namespace App\Services\Dte\Post\Classes;
 
 use App\Models\Document;
-use App\Services\Dte\Post\Mapper\BoletaExenta;
 use App\Services\Dte\Post\Mapper\BoletaAfecta;
+use App\Services\Dte\Post\Mapper\BoletaExenta;
 use App\Services\Dte\Post\Mapper\FacturaAfecta;
 use App\Services\Dte\Post\Mapper\FacturaExenta;
+use App\Services\Dte\Post\Mapper\GuiaDespacho;
 use App\Services\Dte\Post\Mapper\NotaCredito;
 use App\Services\Dte\Post\Mapper\NotaDebito;
 
@@ -21,6 +22,7 @@ class DteApiFactory
             56 => new NotaDebito($document),
             61 => new NotaCredito($document),
             34 => new FacturaExenta($document),
+            52 => new GuiaDespacho($document),
 
           
             default => throw new \LogicException(
