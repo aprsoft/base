@@ -35,6 +35,7 @@ class FacturaAfecta
             'TipoDTE' => 33,
             'Folio'   => 0,
             'FchEmis' => $this->document->fecha,
+             'MntBruto' => 1,
         ];
 
         // Los campos de transacción existen en documents;
@@ -59,6 +60,7 @@ class FacturaAfecta
         $dte = [
             'Encabezado' => [
                 'IdDoc' => $idDoc,
+               
                 'Emisor' => [
                     'RUTEmisor' => $this->company->rut_emisor,
                     'RznSoc'    => $this->company->razon_social,
@@ -66,6 +68,8 @@ class FacturaAfecta
                     'Acteco'    => $this->company->acteco,
                     'DirOrigen' => $this->company->direccion_origen,
                     'CmnaOrigen'=> $this->company->comuna_origen,
+                    
+
                 ],
                 'Receptor' => [
                     'RUTRecep'    => $customer->rutDte,
@@ -79,8 +83,8 @@ class FacturaAfecta
                     'TasaIVA'      => 19,
                     'IVA'          => $this->document->iva,
                     'MntTotal'     => $this->document->total,
-                    'MontoPeriodo' => 2380,
-                    'VlrPagar'     => 2380
+                    // 'MontoPeriodo' => 2380,
+                    // 'VlrPagar'     => 2380
                 ],
             ],
             'Detalle' => $this->mapDetails(),
@@ -125,7 +129,7 @@ class FacturaAfecta
                 'NmbItem'   => $detail->detalle,
                 'QtyItem'   => (int) $detail->QtyItem,
                 'PrcItem'   => (int) $detail->PrcItem,
-                'MontoItem' => (int) $detail->MontoItem,
+                'MontoItem' => (int) ($detail->PrcItem * $detail->QtyItem),
             ];
             if ($detail->IndExe !== null && (int) $detail->IndExe > 0) {
                 $line['IndExe'] = (int) $detail->IndExe;

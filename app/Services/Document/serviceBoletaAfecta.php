@@ -29,6 +29,7 @@ class serviceBoletaAfecta
             'PrcNetoItem'         => 840,
             'PrcItem'             => 1000,
             'ivaItem'             => 160,
+            'MontoNetoItem'       => 1680,
             'MontoItem'           => 2000,
             'detalle'             => 'servicio 1',
         ]);
