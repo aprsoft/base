@@ -10,9 +10,10 @@ return new class extends Migration {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('parent_id')->nullable();
-            $table->integer('user_id')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->unsignedBigInteger('customer_id')->nullable();
             $table->unsignedBigInteger('supplier_id')->nullable();
+            $table->unsignedBigInteger('employee_id')->nullable();
             $table->longText('Referencia')->nullable();
             $table->unsignedInteger('TpoDocRef')->nullable();
             $table->unsignedInteger('CodRef')->nullable();
@@ -26,8 +27,7 @@ return new class extends Migration {
             $table->unsignedInteger('folio')->nullable();
             $table->enum('estado_documento', ['VIGENTE','NO VIGENTE'])->default('VIGENTE');
             $table->enum('condicion_documento', ['PAGADO','PENDIENTE','MOROSO','CONVENIO','ABONO|MOROSO','CONDONADO',
-                'ANULADO','ELIMINADO','APLICADA','NO APLICADA','POR DEFINIR','RECHAZADO','CONTADO','CREDITO','SIN COSTO','INCOBRABLE'])->nullable();
-                    
+                'ANULADO','ELIMINADO','APLICADA','NO APLICADA','POR DEFINIR','RECHAZADO','CONTADO','CREDITO','SIN COSTO','INCOBRABLE'])->nullable();                    
             $table->date('fecha')->nullable();   
             $table->string('numero_orden', 191)->nullable();
             $table->binary('timbre')->nullable();

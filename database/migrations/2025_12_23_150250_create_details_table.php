@@ -20,8 +20,10 @@ return new class extends Migration {
             $table->unsignedInteger('RecargoPct')->nullable();
             $table->unsignedInteger('RecargoMonto')->nullable();
             $table->unsignedInteger('QtyItem')->nullable();
+            $table->unsignedInteger('PrcExeItem')->nullable();
             $table->unsignedInteger('PrcNetoItem')->nullable();
             $table->unsignedInteger('PrcItem')->nullable();
+            $table->unsignedInteger('MontoExeItem')->nullable();  
             $table->unsignedInteger('MontoNetoItem')->nullable(); 
             $table->unsignedInteger('MontoItem')->nullable();  
             $table->integer('ivaItem')->nullable();

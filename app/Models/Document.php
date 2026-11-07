@@ -9,46 +9,47 @@ class Document extends Model
 {
     protected $guarded = ['id'];
 
-    public function getExentoAttribute()
+    public function getExentoAttribute(): int
     {
         if($this->customer_id){
-            return round($this->details()->servicios()->whereNotNull('IndExe')->sum('MontoNetoItem'));
+
+        
+            return round($this->details()->servicios()->whereNotNull('IndExe')->sum(DB::raw('PrcExeItem*QtyItem')));
         }
-         if($this->supplier_id){
+        if($this->supplier_id){
             return round($this->details()->sum('valor_exento'));
         }
-        
+
+        return 0;        
     }
    
 
     // Solo entrega la suma de los detalles de los servicios, el resto del los detalles los deja fuera(subtotales informativos, descuentos, subsidios,etc)
-    public function getNetoAttribute()
+    public function getNetoAttribute(): int
     {
         if($this->customer_id){
-            return round($this->details()->servicios()->whereNull('IndExe')->sum(DB::raw('MontoNetoItem / 1.19')));
+            
+            return round($this->details()->servicios()->whereNull('IndExe')->sum(DB::raw('PrcNetoItem*QtyItem')));
         }
          if($this->supplier_id){
-            return round($this->details()->sum('neto'));
+            return round($this->details()->sum(DB::raw('PrcNetoItem*QtyItem')));
         }
-        
+
+        return 0;        
     }
 
-    public function getIvaAttribute()
+    public function getIvaAttribute(): int
     {
-        // return round($this->getNetoAttribute() * 0.19);
-        return round(
-            $this->details()
-                ->servicios()
-                ->whereNull('IndExe')
-                ->sum(DB::raw('MontoItem - (MontoItem / 1.19)'))
-        );
+            // dd(round($this->details()->servicios()->whereNull('IndExe')->sum(DB::raw('MontoItem - (MontoItem / 1.19)'))));
+        return round($this->details()->servicios()->whereNull('IndExe')->sum(DB::raw('MontoItem - (MontoItem / 1.19)')));
     }
 
     public function getTotalAttribute(): int
     {
        //dd(round($this->getNetoAttribute() + $this->getIvaAttribute()));
-                return round($this->getNetoAttribute() + $this->getIvaAttribute() +  $this->getExentoAttribute());
 
+    //    dd($this->getNetoAttribute() + $this->getIvaAttribute() +  $this->getExentoAttribute());
+        return round($this->getNetoAttribute() + $this->getIvaAttribute() +  $this->getExentoAttribute());
     }
 
     public function getRutAttribute(): ?string

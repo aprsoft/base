@@ -1,13 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Dte\Post\Mapper;
 
 use App\Models\Company;
 use App\Models\Document;
+use DomainException;
+use LogicException;
 
 class GuiaDespacho
 {
-    
     private Document $document;
     private Company $company;
 
@@ -16,179 +19,168 @@ class GuiaDespacho
         $this->document = $document;
         $this->company = Company::query()->firstOrFail();
     }
-    
-    public function map(): string
+
+    /**
+     * IndTraslado es obligatorio para la guía (52), pero NO tiene
+     * columna en la migración documents. Se recibe explícitamente.
+     * El DteSendingManager actual no le pasa este dato y, por
+     * seguridad, no puede emitir una guía hasta resolver ese origen.
+     */
+    public function mapJsonDte(?int $indTraslado = null): string
     {
-        if ((int) $this->document->typedocument->codigo !== 52) {
-            throw new \LogicException(
-                'GuíaDespacho solo soporta TipoDTE 52'
+        if ((int) $this->document->typedocument?->codigo !== 52) {
+            throw new LogicException('El mapper GuiaDespacho solo soporta TipoDTE 52.');
+        }
+        if ($indTraslado === null || ! in_array($indTraslado, range(1, 9), true)) {
+            throw new DomainException(
+                'La guía requiere IndTraslado validado: no existe en la migración documents.'
             );
         }
 
-        $this->company = Company::first();
+        $customer = $this->document->customer;
+        if ($customer === null) {
+            throw new DomainException('La guía no tiene receptor.');
+        }
+
+        $idDoc = [
+            'TipoDTE'    => 52,
+            'Folio'      => 0,
+            'FchEmis'    => $this->document->fecha,
+            'IndTraslado'=> $indTraslado,
+        ];
+        if ($this->document->CdgSIISucur !== null) {
+            $idDoc['CdgSIISucur'] = (int) $this->document->CdgSIISucur;
+        }
 
         $dte = [
             'Encabezado' => [
-                'IdDoc' => array_filter([
-                    'TipoDTE'       => 52,
-                    'Folio'         => $this->document->folio,
-                    'FchEmis'       => $this->document->fecha,
-                    'TipoDespacho'  => $this->document->tipo_despacho ?? null, // opcional
-                    'IndTraslado'   => $this->document->ind_traslado,          // obligatorio
-                    'TpoImpresion'  => $this->document->tipo_impresion ?? null,
-                    'CdgSIISucur'   => $this->document->codigo_sucursal ?? null,
-                ]),
-
-                'Emisor' => array_filter([
-                    'RUTEmisor'    => $this->company->rut_emisor,
-                    'RznSoc'       => $this->company->razon_social,
-                    'GiroEmis'     => $this->company->giro_emisor,
-                    'Acteco'       => $this->company->acteco,
-                    'DirOrigen'    => $this->company->direccion_origen,
-                    'CmnaOrigen'   => $this->company->comuna_origen,
-                    'CiudadOrigen' => $this->company->ciudad_origen ?? null,
-                    'Telefono'     => $this->company->telefono ?? null,
-                    'CorreoEmisor' => $this->company->email ?? null,
-                ]),
-
-                'Receptor' => array_filter([
-                    'RUTRecep'     => $this->document->customer->rutDte,
-                    'RznSocRecep'  => $this->document->customer->fullName,
-                    'GiroRecep'    => $this->document->customer->giro,
-                    'DirRecep'     => $this->document->customer->direccion_cliente,
-                    'CmnaRecep'    => $this->document->customer->comuna,
-                    'CiudadRecep'  => $this->document->customer->ciudad ?? null,
-                    'Contacto'     => $this->document->customer->contacto ?? null,
-                    'CorreoRecep'  => $this->document->customer->email ?? null,
-                ]),
-
-                // Totales en Guía son informativos (no tributarios)
-                'Totales' => array_filter([
-                    'MntExe'   => $this->document->neto ?? null,
-                    'MntTotal' => $this->document->neto ?? null,
-                ]),
+                'IdDoc' => $idDoc,
+                'Emisor' => [
+                    'RUTEmisor' => $this->company->rut_emisor,
+                    'RznSoc'    => $this->company->razon_social,
+                    'GiroEmis'  => $this->company->giro_emisor,
+                    'Acteco'    => $this->company->acteco,
+                    'DirOrigen' => $this->company->direccion_origen,
+                    'CmnaOrigen'=> $this->company->comuna_origen,
+                ],
+                'Receptor' => [
+                    'RUTRecep'    => $customer->rutDte,
+                    'RznSocRecep' => $customer->fullName,
+                    'GiroRecep'   => $customer->giro,
+                    'DirRecep'    => $customer->direccion_cliente,
+                    'CmnaRecep'   => $customer->comuna,
+                ],
+                // El total usa el accessor existente de Document.
+                // Su regla tributaria debe verificarse para cada traslado.
+                'Totales' => [
+                    'MntTotal' => $this->document->total,
+                ],
             ],
-
-            'Detalle'      => $this->mapDetails(),
-            'DscRcgGlobal' => $this->mapDiscount(),
-            'SubTotInfo'   => $this->mapInformativeSubtotals(),
-            'Referencia'   => $this->mapReferences(),
-            'Transporte'   => $this->mapTransport(),
-            'Aduana'       => $this->mapAduana(),
+            'Detalle' => $this->mapDetails(),
         ];
 
-        return json_encode([
-            'response' => ['TIMBRE', 'FOLIO'],
-            'dte'      => array_filter($dte),
-        ], JSON_UNESCAPED_UNICODE);
+        $discounts = $this->mapDiscount();
+        if ($discounts !== []) {
+            $dte['DscRcgGlobal'] = $discounts;
+        }
+        $subtotals = $this->mapInformativeSubtotals();
+        if ($subtotals !== []) {
+            $dte['SubTotInfo'] = $subtotals;
+        }
+
+        $parent = $this->document->parent;
+        if ($parent !== null) {
+            if ($parent->typedocument?->codigo === null || $parent->folio === null) {
+                throw new DomainException('La referencia de la guía no tiene tipo o folio.');
+            }
+            $dte['Referencia'] = [[
+                'NroLinRef' => 1,
+                'TpoDocRef' => (int) $parent->typedocument->codigo,
+                'FolioRef'  => (int) $parent->folio,
+                'FchRef'    => $parent->fecha,
+            ]];
+        }
+
+        // No se inventan relaciones transporte/aduana ni sus columnas.
+        return json_encode(
+            ['response' => ['TIMBRE', 'FOLIO'], 'dte' => $dte],
+            JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        );
     }
 
-    /* ===================== DETALLE ===================== */
 
     protected function mapDetails(): array
     {
-        return $this->document->details()
+        $details = $this->document->details()
             ->vigente()
-            ->get()
-            ->map(fn ($detail, $index) => array_filter([
+            ->servicios()
+            // El service_id 10 es descuento; no debe duplicarse como ítem.
+            ->where('service_id', '!=', 10)
+            ->get();
+
+        if ($details->isEmpty()) {
+            throw new DomainException('El documento no tiene ítems vigentes para el DTE.');
+        }
+
+        return $details->values()->map(function ($detail, int $index): array {
+            if ($detail->QtyItem === null || $detail->PrcItem === null || $detail->MontoItem === null) {
+                throw new DomainException('Faltan cantidad, precio o monto en un detalle.');
+            }
+
+            $line = [
                 'NroLinDet' => $index + 1,
                 'NmbItem'   => $detail->detalle,
-                'QtyItem'   => $detail->cantidad,
-                'PrcItem'   => $detail->valor,
-                'MontoItem' => $detail->cantidad * $detail->valor,
-                'IndExe'    => 1, // Guía: ítems exentos/informativos
-            ]))
-            ->values()
-            ->toArray();
-    }
+                'QtyItem'   => (int) $detail->QtyItem,
+                'PrcItem'   => (int) $detail->PrcItem,
+                'MontoItem' => (int) $detail->MontoItem,
+            ];
+            if ($detail->IndExe !== null && (int) $detail->IndExe > 0) {
+                $line['IndExe'] = (int) $detail->IndExe;
+            }
 
-    /* ===================== DESCUENTOS ===================== */
+            return $line;
+        })->all();
+    }
 
     protected function mapDiscount(): array
     {
-        return $this->document->details()
-            ->vigente()
-            ->descuento()
-            ->get()
-            ->map(fn ($detail) => [
-                'TpoMov'   => 'D',
-                'TpoValor' => '$',
-                'ValorDR'  => abs($detail->valor),
-                'IndExeDR' => 1,
-            ])
-            ->values()
-            ->toArray();
-    }
+        return $this->document->details()->vigente()->descuento()->get()
+            ->values()->map(function ($detail, int $index): array {
+                // MontoItem es una columna física. Aquí representa el valor
+                // del registro de descuento (service_id 10); confirmar
+                // su convención con los datos reales antes de emitir.
+                if ($detail->MontoItem === null) {
+                    throw new DomainException('Falta MontoItem en un descuento.');
+                }
 
-    /* ===================== SUBTOTALES INFO ===================== */
+                $line = [
+                    'NroLinDR' => $index + 1,
+                    'TpoMov'   => 'D',
+                    'TpoValor' => '$',
+                    'ValorDR'  => abs((int) $detail->MontoItem),
+                ];
+                if ($detail->IndExe !== null && in_array((int) $detail->IndExe, [1, 2], true)) {
+                    $line['IndExeDR'] = (int) $detail->IndExe;
+                }
+
+                return $line;
+            })->all();
+    }
 
     protected function mapInformativeSubtotals(): array
     {
-        return $this->document->details()
-            ->vigente()
-            ->informativo()
-            ->get()
-            ->map(fn ($detail, $index) => [
-                'NroSTI'       => $index + 1,
-                'GlosaSTI'     => $detail->detalle,
-                'SubTotExeSTI' => abs((int) $detail->valor),
-            ])
-            ->values()
-            ->toArray();
+        return $this->document->details()->vigente()->informativo()->get()
+            ->values()->map(function ($detail, int $index): array {
+                if ($detail->MontoItem === null) {
+                    throw new DomainException('Falta MontoItem en un subtotal informativo.');
+                }
+
+                return [
+                    'NroSTI'       => $index + 1,
+                    'GlosaSTI'     => $detail->detalle,
+                    'SubTotExeSTI' => abs((int) $detail->MontoItem),
+                ];
+            })->all();
     }
 
-    /* ===================== REFERENCIAS ===================== */
-
-    protected function mapReferences(): array
-    {
-        return $this->document->references()
-            ->get()
-            ->map(fn ($ref, $index) => array_filter([
-                'NroLinRef' => $index + 1,
-                'TpoDocRef' => $ref->tipo_documento,
-                'FolioRef'  => $ref->folio,
-                'FchRef'    => $ref->fecha,
-                'RazonRef'  => $ref->razon,
-            ]))
-            ->values()
-            ->toArray();
-    }
-
-    /* ===================== TRANSPORTE ===================== */
-
-    protected function mapTransport(): ?array
-    {
-        if (!$this->document->transporte) {
-            return null;
-        }
-
-        return array_filter([
-            'RutTrans'   => $this->document->transporte->rut,
-            'NombreTrans'=> $this->document->transporte->nombre,
-            'Patente'   => $this->document->transporte->patente,
-            'RUTChofer' => $this->document->transporte->rut_chofer,
-            'NombreChofer' => $this->document->transporte->nombre_chofer,
-            'DirDest'   => $this->document->direccion_destino,
-            'CmnaDest'  => $this->document->comuna_destino,
-            'CiudadDest'=> $this->document->ciudad_destino,
-        ]);
-    }
-
-    /* ===================== ADUANA (EXPORTACIÓN) ===================== */
-
-    protected function mapAduana(): ?array
-    {
-        if (!$this->document->aduana) {
-            return null;
-        }
-
-        return array_filter([
-            'CodModVenta' => $this->document->aduana->modo_venta,
-            'CodClauVenta'=> $this->document->aduana->clausula_venta,
-            'TotClauVenta'=> $this->document->aduana->total_clausula,
-            'CodViaTransp'=> $this->document->aduana->via_transporte,
-            'CodPtoEmbarq'=> $this->document->aduana->puerto_embarque,
-            'IdAdicPtoEmb'=> $this->document->aduana->puerto_destino,
-        ]);
-    }
 }
