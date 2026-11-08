@@ -27,6 +27,7 @@ class NotaCredito
         }
 
         $customer = $this->document->customer;
+       
         $parent = $this->document->parent;
         if ($customer === null || $parent?->typedocument === null || $parent->folio === null) {
             throw new DomainException('La nota requiere receptor y documento de referencia con folio.');

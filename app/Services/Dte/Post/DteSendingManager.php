@@ -12,7 +12,8 @@ class DteSendingManager
 {   
     public function send(Document $document)
     {   
-       $jsonSendDte     = DteApiFactory::resolve($document)->mapJsonDte();    
+       $jsonSendDte     = DteApiFactory::resolve($document)->mapJsonDte(); 
+       dd($jsonSendDte);
        $jsonResponseDte = DteApiSend::send($jsonSendDte, $document->id);
 
        dd($jsonResponseDte);
