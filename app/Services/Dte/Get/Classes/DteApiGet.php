@@ -35,7 +35,6 @@ class DteApiGet
 
 
 
-        curl_close($curl);
        return  json_decode($response, true);       
 
             

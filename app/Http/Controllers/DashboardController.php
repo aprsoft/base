@@ -8,7 +8,7 @@ use App\Services\Document\serviceBoletaExenta;
 use App\Services\Document\serviceFacturaAfecta;
 use App\Services\Document\serviceNotaCredito;
 use App\Services\Dte\Get\DteGetManager;
-use App\Services\Dte\Post\DteSendingManager;
+use App\Services\Dte\Post\DtePostManager;
 
 class DashboardController extends Controller
 {
@@ -24,17 +24,16 @@ class DashboardController extends Controller
 
             // $serviceDocument = new serviceFacturaAfecta();
             // $document = $serviceDocument->createDocument(15);
-            // dd($document);
 
              $serviceDocument = new serviceNotaCredito();
-             $document = $serviceDocument->createDocument(Document::find(80));
+             $document = $serviceDocument->createDocument(Document::find(106));
          
 
     //         $dteGetManager = new DteGetManager();
     //         $response = $dteGetManager->get();
     //    dd($response);
         
-        $dteApiPostManager = new DteSendingManager();
+        $dteApiPostManager = new DtePostManager();
         $response = $dteApiPostManager->send($document);
         dd($response->toArray());
        
