@@ -34,19 +34,19 @@ class serviceFacturaAfecta
             'detalle'             => 'servicio 1',
         ]);
 
-        Detail::create([
-            'document_id'         => $document->id,
-            'NroLinDet'           => 2,
-            'IndExe'              => null,
-            'service_id'          => 7,
-            'QtyItem'             => 1,
-            'PrcNetoItem'         => 840,
-            'PrcItem'             => 1000,
-            'ivaItem'             => 160,
-            'MontoNetoItem'       => 840,
-            'MontoItem'           => 1000,
-            'detalle'             => 'servicio 2',
-        ]);
+        // Detail::create([
+        //     'document_id'         => $document->id,
+        //     'NroLinDet'           => 2,
+        //     'IndExe'              => null,
+        //     'service_id'          => 7,
+        //     'QtyItem'             => 1,
+        //     'PrcNetoItem'         => 840,
+        //     'PrcItem'             => 1000,
+        //     'ivaItem'             => 160,
+        //     'MontoNetoItem'       => 840,
+        //     'MontoItem'           => 1000,
+        //     'detalle'             => 'servicio 2',
+        // ]);
 
         return $document;
     }
