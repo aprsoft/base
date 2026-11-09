@@ -2,6 +2,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ErrorController;
 use App\Http\Controllers\PdfController;
 use App\Http\Controllers\PermissionController;
@@ -144,6 +145,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('errors/{id}', [ErrorController::class, 'show'])
         ->middleware('can:errors.show')
         ->name('errors.show');
+
+         /*
+    |--------------------------------------------------------------------------
+    | Documents
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('documents/{documents}', [DocumentController::class, 'show'])
+            // ->middleware('can:viewAny,'.ErrorLog::class)
+        ->name('documents.show');
+
+
 
 });
 

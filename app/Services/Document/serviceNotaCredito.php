@@ -10,7 +10,7 @@ use Throwable;
 
 class serviceNotaCredito
 {
-    public function createDocument(Document $document): Document
+    public function createDocument(Document $document, int $CodRef): Document
     {
         DB::beginTransaction();
 
@@ -30,7 +30,7 @@ class serviceNotaCredito
                 'meter_id'        => null,
                 'typedocument_id' => 13,
                 'fecha'           => now()->toDateString(),
-                'CodRef'          => 1,
+                'CodRef'          => $CodRef,
             ]);
 
             foreach ($document->details as $detail) {

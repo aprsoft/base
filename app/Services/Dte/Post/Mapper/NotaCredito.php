@@ -13,13 +13,11 @@ class NotaCredito
 {
     private Document $document;
     private Company $company;
-    private int $CodRef;
 
-    public function __construct(Document $document, int $CodRef)
+    public function __construct(Document $document)
     {
         $this->document = $document;
         $this->company = Company::query()->firstOrFail();
-        $this->CodRef;
     }
 
     public function mapJsonDte(): string
@@ -49,7 +47,7 @@ class NotaCredito
             'TpoDocRef' => (int) $parent->typedocument->codigo,
             'FolioRef'  => (int) $parent->folio,
             'FchRef'    => $parent->fecha,
-            'CodRef'    => $CodRef,
+            'CodRef'    => (int) $this->document->CodRef,
         ]];
 
         $dte = [
@@ -58,7 +56,7 @@ class NotaCredito
                     'TipoDTE' => 61,
                     'Folio'   => 0,
                     'FchEmis' => $this->document->fecha,
-                    'MntBruto' => 1,
+                    'MntBruto' => 1
                 ],
                 'Emisor' => [
                     'RUTEmisor' => $this->company->rut_emisor,

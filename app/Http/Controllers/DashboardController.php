@@ -22,35 +22,34 @@ class DashboardController extends Controller
         // $serviceDocument = new serviceBoletaAfecta();
         // $document = $serviceDocument->createDocument(17);
 
-            $serviceFacturaAfecta = new serviceFacturaAfecta();
-            $document = $serviceFacturaAfecta->createDocument(15);
-
-            $dtePostManager = new DtePostManager();
-            $response = $dtePostManager->send($document);
-
-            if ($response['accepted']) {
-                $document->folio = $response['folio'];
-                $document->save();
-            }
-          
-
-            // if ($response['WARNING'])
+      $dteGetManager = new DteGetManager;
+       dd($dteGetManager->manager());
 
 
-            $serviceDocument = new serviceNotaCredito();
-            $document2 = $serviceDocument->createDocument($document,1);
+        $serviceFacturaAfecta = new serviceFacturaAfecta();
+        $document = $serviceFacturaAfecta->createDocument(15);
 
-            $dteApiPostManager = new DtePostManager();
-            $response = $dteApiPostManager->send($document2);
+        $dtePostManager = new DtePostManager();
+        $response = $dtePostManager->send($document);
+
+        if ($response['accepted']) {
+            $document->folio = $response['folio'];
+            $document->save();
+        }
+        
+
+        // if ($response['WARNING'])
+
+
+        $serviceDocument = new serviceNotaCredito();
+        $document2 = $serviceDocument->createDocument($document,1);
+
+        $dteApiPostManager = new DtePostManager();
+        $response = $dteApiPostManager->send($document2);
          
 
-    //         $dteGetManager = new DteGetManager();
-    //         $response = $dteGetManager->get();
         dd($response);
         
-        $dteApiPostManager = new DtePostManager();
-        $response = $dteApiPostManager->send($document);
-        dd($response->toArray());
        
         
 
