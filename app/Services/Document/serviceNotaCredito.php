@@ -16,6 +16,12 @@ class serviceNotaCredito
 
         try {
 
+        // Código	Descripción del SII	                    Uso
+        // ----------------------------------------------------------------------------------------------------
+        // 1	    Anula Documento de Referencia	        Anulación total de una factura
+        // 2	    Corrige Texto Documento de Referencia	Corregir errores de escritura
+        // 3	    Corrige montos	                        Corrección de valores, incluyendo rebajas parciales
+
             $objDocument = Document::create([
                 'parent_id'       => $document->id,
                 'user_id'         => 1,
