@@ -22,15 +22,14 @@ class DocumentController extends Controller
 
     public function show(Document $document, bool $Api = False)
     {
-         $dteGetManager = new DteGetManager;
-         $response = $dteGetManager->manager('xml');
+        $dteGetManager = new DteGetManager;
+        $response = $dteGetManager->manager('xml');
 
-         $png = app(TimbrePdf417Service::class)->generar($response['xml']);
-         return response($png, 200)
-    ->header('Content-Type', 'image/png');
+        $stamp = app(TimbrePdf417Service::class)->generar($response['xml']);
+      
 
 
-        // return view('documents.show',compact('document'));
+        return view('documents.show',compact('document','stamp'));
     }
    
 

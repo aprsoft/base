@@ -16,39 +16,39 @@ class DashboardController extends Controller
     {  
  
 
-        // $serviceDocument = new serviceBoletaExenta();
-        // $document = $serviceDocument->createDocument(12);
+    //     // $serviceDocument = new serviceBoletaExenta();
+    //     // $document = $serviceDocument->createDocument(12);
 
-        // $serviceDocument = new serviceBoletaAfecta();
-        // $document = $serviceDocument->createDocument(17);
+    //     // $serviceDocument = new serviceBoletaAfecta();
+    //     // $document = $serviceDocument->createDocument(17);
 
-      $dteGetManager = new DteGetManager;
-       dd($dteGetManager->manager());
+    //   $dteGetManager = new DteGetManager;
+    //    dd($dteGetManager->manager('xml'));
 
 
-        $serviceFacturaAfecta = new serviceFacturaAfecta();
-        $document = $serviceFacturaAfecta->createDocument(15);
+    //     $serviceFacturaAfecta = new serviceFacturaAfecta();
+    //     $document = $serviceFacturaAfecta->createDocument(15);
 
-        $dtePostManager = new DtePostManager();
-        $response = $dtePostManager->send($document);
+    //     $dtePostManager = new DtePostManager();
+    //     $response = $dtePostManager->send($document);
 
-        if ($response['accepted']) {
-            $document->folio = $response['folio'];
-            $document->save();
-        }
+    //     if ($response['accepted']) {
+    //         $document->folio = $response['folio'];
+    //         $document->save();
+    //     }
         
 
-        // if ($response['WARNING'])
+    //     // if ($response['WARNING'])
 
 
-        $serviceDocument = new serviceNotaCredito();
-        $document2 = $serviceDocument->createDocument($document,1);
+    //     $serviceDocument = new serviceNotaCredito();
+    //     $document2 = $serviceDocument->createDocument($document,1);
 
-        $dteApiPostManager = new DtePostManager();
-        $response = $dteApiPostManager->send($document2);
+    //     $dteApiPostManager = new DtePostManager();
+    //     $response = $dteApiPostManager->send($document2);
          
 
-        dd($response);
+    //     dd($response);
         
        
         

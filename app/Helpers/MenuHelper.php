@@ -19,6 +19,31 @@ class MenuHelper
     
     }
 
+    public static function getManagementItems(): array
+    {
+        return [
+            [
+                'icon' => 'users',
+                'name' => 'Clientes',
+                'subItems' => [
+                    [
+                        'name' => 'Listado',
+                        'path' => route('customers.index', absolute: false),
+                        'permission' => 'customers.index',
+                        'pro' => false
+                    ],
+                    [
+                        'name' => 'Crear Cliente',
+                        'path' => route('customers.create', absolute: false),
+                        'permission' => 'customers.create',
+                        'pro' => false
+                    ],
+                ],
+            ],        
+           
+        ];
+    }
+
     public static function getAdministrationItems(): array
     {
         return [
@@ -136,6 +161,10 @@ class MenuHelper
             [
                 'title' => 'Menu',
                 'items' => self::getMainNavItems(),
+            ],
+             [
+                'title' => 'Gestion',
+                'items' => self::getManagementItems(),
             ],
             [
                 'title' => 'Administration',
