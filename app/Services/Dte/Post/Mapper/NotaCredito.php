@@ -29,7 +29,6 @@ class NotaCredito
         $customer = $this->document->customer;
        
         $parent = $this->document->parent;
-        dd($parent);
         if ($customer === null || $parent?->typedocument === null || $parent->folio === null) {
             throw new DomainException('La nota requiere receptor y documento de referencia con folio.');
         }
@@ -115,11 +114,11 @@ class NotaCredito
             }
 
             $line = [
-                'NroLinDet' => $index + 1,
-                'NmbItem'   => $detail->detalle,
-                'QtyItem'   => (int) $detail->QtyItem,
-                'PrcItem'   => (int) $detail->PrcItem,
-                'MontoItem' => (int) $detail->MontoItem,
+                'NroLinDet'     => $index + 1,
+                'NmbItem'       => $detail->detalle,
+                'QtyItem'       => (int) $detail->QtyItem,
+                'PrcItem'       => (int) $detail->PrcItem,
+                'MontoItem'     => (int) $detail->MontoItem,
             ];
             if ($detail->IndExe !== null && (int) $detail->IndExe > 0) {
                 $line['IndExe'] = (int) $detail->IndExe;

@@ -27,8 +27,12 @@ class DashboardController extends Controller
 
             $dtePostManager = new DtePostManager();
             $response = $dtePostManager->send($document);
-
-            //dd($response);
+            
+            if ($response['accepted']) {
+                $document->folio = $response['folio'];
+                $document->save();
+            }
+          
 
             // if ($response['WARNING'])
 
@@ -37,7 +41,7 @@ class DashboardController extends Controller
             $document2 = $serviceDocument->createDocument($document);
 
             $dteApiPostManager = new DtePostManager();
-            $response = $dteApiPostManager->send($document);
+            $response = $dteApiPostManager->send($document2);
          
 
     //         $dteGetManager = new DteGetManager();

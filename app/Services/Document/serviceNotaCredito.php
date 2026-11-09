@@ -34,7 +34,7 @@ class serviceNotaCredito
                     'estado_detalle'   => 'VIGENTE',
                     'service_id'       => $detail->service_id,
                     'QtyItem'          => $detail->QtyItem,
-                    'PrcNetoItem'      => $detail->PrcNetoItemo,
+                    'PrcNetoItem'      => $detail->PrcNetoItem,
                     'PrcItem'          => $detail->PrcItem,
                     'MontoNetoItem'    => $detail->MontoNetoItem,
                     'ivaItem'          => $detail->ivaItem,

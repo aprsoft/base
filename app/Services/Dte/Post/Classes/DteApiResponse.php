@@ -35,7 +35,7 @@ class DteApiResponse
                 folio: $response['FOLIO'],                    
                 warnings: $response['WARNING'],
                 
-            );           
+            )->toArray();           
 
         }else {
 
