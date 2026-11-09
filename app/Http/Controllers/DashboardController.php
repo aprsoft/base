@@ -22,16 +22,27 @@ class DashboardController extends Controller
         // $serviceDocument = new serviceBoletaAfecta();
         // $document = $serviceDocument->createDocument(17);
 
-            // $serviceDocument = new serviceFacturaAfecta();
-            // $document = $serviceDocument->createDocument(15);
+            $serviceFacturaAfecta = new serviceFacturaAfecta();
+            $document = $serviceFacturaAfecta->createDocument(15);
 
-             $serviceDocument = new serviceNotaCredito();
-             $document = $serviceDocument->createDocument(Document::find(106));
+            $dtePostManager = new DtePostManager();
+            $response = $dtePostManager->send($document);
+
+            //dd($response);
+
+            // if ($response['WARNING'])
+
+
+            $serviceDocument = new serviceNotaCredito();
+            $document2 = $serviceDocument->createDocument($document);
+
+            $dteApiPostManager = new DtePostManager();
+            $response = $dteApiPostManager->send($document);
          
 
     //         $dteGetManager = new DteGetManager();
     //         $response = $dteGetManager->get();
-    //    dd($response);
+        dd($response);
         
         $dteApiPostManager = new DtePostManager();
         $response = $dteApiPostManager->send($document);

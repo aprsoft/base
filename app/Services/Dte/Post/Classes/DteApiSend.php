@@ -11,7 +11,7 @@ class DteApiSend
     public static function send(string $payload, int $IdempotencyKey)
     {   
       
-        // dd($payload);  
+        //dd($payload);  
         $company = Company::query()->firstOrFail();
 
          $curl = curl_init();
@@ -34,7 +34,6 @@ class DteApiSend
 
             $response = curl_exec($curl); 
 
-            // dd(json_decode($response, true));  
 
             return json_decode($response, true);  
             

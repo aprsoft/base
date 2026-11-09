@@ -29,6 +29,7 @@ class NotaCredito
         $customer = $this->document->customer;
        
         $parent = $this->document->parent;
+        dd($parent);
         if ($customer === null || $parent?->typedocument === null || $parent->folio === null) {
             throw new DomainException('La nota requiere receptor y documento de referencia con folio.');
         }
@@ -89,7 +90,7 @@ class NotaCredito
         }
 
         return json_encode(
-            ['response' => ['TIMBRE', 'FOLIO'], 'dte' => $dte],
+            ['response' => ['TIMBRE', 'FOLIO','PDF'], 'dte' => $dte],
             JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
         );
     }
