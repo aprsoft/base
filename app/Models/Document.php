@@ -12,7 +12,6 @@ class Document extends Model
     public function getExentoAttribute(): int
     {
         if($this->customer_id){
-
         
             return round($this->details()->servicios()->whereNotNull('IndExe')->sum(DB::raw('PrcExeItem*QtyItem')));
         }
@@ -45,9 +44,7 @@ class Document extends Model
 
     public function getTotalAttribute(): int
     {
-       //dd(round($this->getNetoAttribute() + $this->getIvaAttribute()));
-
-    //    dd($this->getNetoAttribute() + $this->getIvaAttribute() +  $this->getExentoAttribute());
+   
         return round($this->getNetoAttribute() + $this->getIvaAttribute() +  $this->getExentoAttribute());
     }
 

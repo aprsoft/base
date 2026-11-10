@@ -37,23 +37,30 @@ class DocumentController extends Controller
         ]); 
     }
 
+    public function show(Document $document)
+    {
+          
+        return view('documents.show',compact('document'));
+    } 
+
+
 
     public function create()
     {
         return view('documents.create');
     }  
 
-    public function show(Document $document, bool $Api = False)
-    {
-        $dteGetManager = new DteGetManager;
-        $response = $dteGetManager->manager('xml');
+    // public function show(Document $document, bool $Api = False)
+    // {
+    //     $dteGetManager = new DteGetManager;
+    //     $response = $dteGetManager->manager('xml');
 
-        $stamp = app(TimbrePdf417Service::class)->generar($response['xml']);
+    //     $stamp = app(TimbrePdf417Service::class)->generar($response['xml']);
       
 
 
-        return view('documents.show',compact('document','stamp'));
-    }
+    //     return view('documents.show',compact('document','stamp'));
+    // }
    
 
 

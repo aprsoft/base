@@ -21,9 +21,14 @@ final class CustomerDocumentsTable extends PowerGridComponent
 {
     public string $tableName = 'customerDocumentsTable';
 
-    public ?string  $condition  = null;
-    public ?string  $type       = null;
+    public ?string  $condition   = null;
+    public ?string  $type        = null;
     public Customer $customer;
+    public ?bool    $boolPayment = true;
+
+    public string   $sortField = 'id';
+    public string   $sortDirection = 'desc';
+
 
     
     public function setUp(): array
@@ -70,17 +75,18 @@ final class CustomerDocumentsTable extends PowerGridComponent
             ->add('tipo', fn($doc) => $doc->typedocument?->abrev ?? '')
             ->add('condicion_documento')
             ->add('folio')
+            ->add('comprobante',fn($doc)=>$this->paymentLink($doc)) 
             ->add('fecha')
             ->add('total', fn ($doc) =>Number::currency($doc->total ?? 0, in: 'CLP', locale: 'es_CL'));             
 ;
     }
 
-     public function columns(): array
+    public function columns(): array
     {
         return [
             Column::make('ID', 'id')
             ->searchableRaw('documents.id LIKE ?')
-            ->hidden(isHidden: true, isForceHidden: false)
+            ->hidden(isHidden: true, isForceHidden: false)            
             ->sortable(),
             Column::make('RUT', 'rut')
                 ->sortable()
@@ -102,7 +108,9 @@ final class CustomerDocumentsTable extends PowerGridComponent
             Column::make('Folio', 'folio')
                 ->searchable()
                 ->sortable()
-                ->hidden(isHidden: false, isForceHidden: false),            
+                ->hidden(isHidden: false, isForceHidden: false), 
+            $this->paymentColumn($this->boolPayment),
+           
             Column::make('Fecha', 'fecha')
                 ->searchable()
                 ->sortable(),
@@ -137,15 +145,30 @@ final class CustomerDocumentsTable extends PowerGridComponent
         ];
     }
 
-    /*
-    public function actionRules($row): array
+    protected function paymentLink(Document $doc)
     {
-       return [
-            // Hide button edit for ID 1
-            Rule::button('edit')
-                ->when(fn($row) => $row->id === 1)
-                ->hide(),
-        ];
+        $payment = $doc->payment()->first();
+
+            if (!$payment) {
+                return '';
+            }
+
+            return sprintf(
+                '<a href="%s" class="text-blue-600 hover:underline font-semibold">
+                    %s
+                </a>',
+                route('payments.show', $payment->id),
+                $payment->id
+            );
+
     }
-    */
+    
+    protected function paymentColumn(bool $boolPayment)
+    {
+        return $boolPayment
+            ? Column::make('N° Comprobante', 'comprobante')
+            : null;
+    }
+
+ 
 }

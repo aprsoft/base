@@ -13,18 +13,18 @@
                     $subtitle = null;
 
                     if (isset($customer)) {
-                        $title = '{{ $customer->fullName }}';
+                        $title = $customer->fullName;
                         $subtitle = 'Historial completo de documentos asociados al cliente.';
                     } elseif ($entity === 'customers' && ! isset($customer)) {
                         $title = 'Listado de Documentos de Clientes';
                         $subtitle = 'Historial completo de documentos asociados a los clientes.';
                     } elseif (isset($supplier)) {
-                        $title = 'Documentos del Proveedor';
+                        $title = $supplier->fullName;
                         $subtitle = 'Historial completo de documentos asociados al proveedor.';
                     } elseif ($entity === 'suppliers') {
                         $title = 'Listado de Documentos de Proveedores';
                     } elseif (isset($meter)) {
-                        $title = 'Documentos del Medidor';
+                        $title = $meter->numero_medidor;
                         $subtitle = 'Documentos asociados al medidor seleccionado.';
                     } elseif ($entity === 'overdue') {
                         $title = 'Listado de Clientes Morosos';
