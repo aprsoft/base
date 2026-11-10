@@ -21,18 +21,16 @@ final class CustomerDocumentsTable extends PowerGridComponent
 {
     public string $tableName = 'customerDocumentsTable';
 
-    public ?string  $condicion  = null;
+    public ?string  $condition  = null;
     public ?string  $type       = null;
     public Customer $customer;
 
+    
     public function setUp(): array
     {  
-        // ($this->routeName === 'payments.create.customer')?$this->showCheckBox():'';    
 
         return [
-            // PowerGrid::detail()
-            //     ->view('tenant.admin.powergrid.detail')
-            //     ->showCollapseIcon(),            
+                  
             PowerGrid::header()
                 ->showToggleColumns()
                 ->showSearchInput(),
@@ -51,13 +49,10 @@ final class CustomerDocumentsTable extends PowerGridComponent
             ->join('customers', 'customers.id', '=', 'documents.customer_id')
             ->join('typedocuments', 'typedocuments.id', '=', 'documents.typedocument_id')
             ->join('readings', 'readings.id', '=', 'documents.reading_id')
-
-            ->when($this->condicion, function ($query) {
-                $query->where('documents.condicion_documento', $this->condicion);
-            })
-            ->when($this->customer->id, function ($query) {
-                $query->where('documents.customer_id', $this->customer->id);
-            })            
+            ->where('documents.customer_id', $this->customer->id)
+            ->when($this->condition, function ($query) {
+                $query->where('documents.condicion_documento', $this->condition);
+            })                    
             ->whereNotNull('documents.customer_id')
             ->vigente()
             ->select('documents.*');     
@@ -70,7 +65,7 @@ final class CustomerDocumentsTable extends PowerGridComponent
         return PowerGrid::Fields()
             ->add('id')
             ->add('rut', fn($doc) => $doc->customer?->rutFormat ?? '')            
-            ->add('fullName', fn($doc) => $doc->customer?->fullName ?? '')
+            // ->add('fullName', fn($doc) => $doc->customer?->fullName ?? '')
             ->add('detalle', fn($doc) => $doc->reading?->mes_cobro ?? 'Servicio')
             ->add('tipo', fn($doc) => $doc->typedocument?->abrev ?? '')
             ->add('condicion_documento')
@@ -91,11 +86,11 @@ final class CustomerDocumentsTable extends PowerGridComponent
                 ->sortable()
                 ->searchableRaw('customers.rut LIKE ?')
                 ->hidden(isHidden: true, isForceHidden: false), 
-            Column::make('Razon Social', 'fullName')
-                ->searchableRaw("CONCAT_WS(' ',customers.nombres, customers.apellido_paterno, customers.apellido_materno) 
-                    like  CONCAT('%', REPLACE(?, ' ', '%'), '%')")
-                // ->hidden(isHidden: true, isForceHidden: false)
-                ->sortable(),            
+            // Column::make('Razon Social', 'fullName')
+            //     ->searchableRaw("CONCAT_WS(' ',customers.nombres, customers.apellido_paterno, customers.apellido_materno) 
+            //         like  CONCAT('%', REPLACE(?, ' ', '%'), '%')")
+            //     // ->hidden(isHidden: true, isForceHidden: false)
+            //     ->sortable(),            
             Column::make('Tipo', 'tipo')
                 ->searchableRaw('typedocuments.name LIKE ?')
                 ->sortable()

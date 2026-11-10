@@ -2,7 +2,7 @@
 
 @section('content')
 
-    <x-common.page-breadcrumb :pageTitle="'Documentos - ' . ($customer?->fullname ?? '')" />
+    <x-common.page-breadcrumb :pageTitle="'Documentos'" />
     
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 
@@ -13,7 +13,7 @@
                     $subtitle = null;
 
                     if (isset($customer)) {
-                        $title = 'Documentos del Cliente';
+                        $title = '{{ $customer->fullName }}';
                         $subtitle = 'Historial completo de documentos asociados al cliente.';
                     } elseif ($entity === 'customers' && ! isset($customer)) {
                         $title = 'Listado de Documentos de Clientes';
@@ -33,7 +33,9 @@
                 @endphp
 
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
-                    {{ $title }}
+                    <span class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
+                        {{ $customer->fullName }}
+                    </span>
                 </h1>
 
                 @if ($subtitle)
@@ -44,7 +46,7 @@
             </div>
 
             {{-- Bloque derecho: Identificador contextual --}}
-            @if (isset($customer))
+            {{-- @if (isset($customer))
                 <div class="bg-indigo-50 dark:bg-gray-800 px-4 py-2 rounded-xl shadow-sm">
                     <span class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
                         {{ $customer->fullName }}
@@ -64,7 +66,7 @@
                         N° {{ $meter->numero_medidor }}
                     </span>
                 </div>
-            @endif
+            @endif --}}
 
         </div>
   
@@ -75,7 +77,7 @@
 
                     @if (isset($customer))
                         <livewire:document.customer.customer-documents-table
-                            :customerId="$customer"
+                            :customer="$customer"
                         />
                     @elseif ($entity === 'customers')
                         <livewire:document.documents-table
