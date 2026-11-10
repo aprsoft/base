@@ -1,28 +1,29 @@
 <?php
 
-namespace App\Livewire\Documents\Customer;
+namespace App\Livewire\Document\Customer;
 
+use App\Models\Customer;
 use App\Models\Document;
-use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Number;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
+use PowerComponents\LivewirePowerGrid\Components\SetUp\ColumnToggle;
 use PowerComponents\LivewirePowerGrid\Components\SetUp\Responsive;
 use PowerComponents\LivewirePowerGrid\Facades\Filter;
 use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
-use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
-use PowerComponents\LivewirePowerGrid\Components\SetUp\ColumnToggle;
+use PowerComponents\LivewirePowerGrid\PowerGridFields;
 
 
 final class CustomerDocumentsTable extends PowerGridComponent
 {
     public string $tableName = 'customerDocumentsTable';
 
-    public ?string $condicion  = null;
-    public ?string $type       = null;
-    public ?int    $customerId = null;
+    public ?string  $condicion  = null;
+    public ?string  $type       = null;
+    public Customer $customer;
 
     public function setUp(): array
     {  
@@ -54,8 +55,8 @@ final class CustomerDocumentsTable extends PowerGridComponent
             ->when($this->condicion, function ($query) {
                 $query->where('documents.condicion_documento', $this->condicion);
             })
-            ->when($this->customerId, function ($query) {
-                $query->where('documents.customer_id', $this->customerId);
+            ->when($this->customer->id, function ($query) {
+                $query->where('documents.customer_id', $this->customer->id);
             })            
             ->whereNotNull('documents.customer_id')
             ->vigente()

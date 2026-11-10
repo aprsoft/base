@@ -18,6 +18,7 @@ class DocumentController extends Controller
         $route      = $request->route();
         $hasParams  = ! empty($route->parameters());
 
+
         $entity = $hasParams
             ? null
             : match ($route->getName()) {
@@ -32,7 +33,8 @@ class DocumentController extends Controller
             'customer' => $customer,
             'supplier' => $supplier,
             'meter'    => $meter,
-        ]);
+            'title'    => 'test'
+        ]); 
     }
 
 

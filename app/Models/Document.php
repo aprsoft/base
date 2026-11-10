@@ -70,8 +70,7 @@ class Document extends Model
                     $this->parent->folio
                 );
             }
-            
-            return 'Medidor N° '.$this->meter->numero_medidor .' - '. ($this->reading?->mes_cobro ?? 'SERVICIO');
+            return 'Medidor N° '.$this->meter?->numero_medidor .' - '. ($this->reading?->mes_cobro ?? 'SERVICIO');
         }
 
         if ($this->supplier) {
@@ -117,20 +116,20 @@ class Document extends Model
         return $this->belongsTo(Customer::class);
     }  
 
-    // public function supplier()
-    // {
-    //     return $this->belongsTo(Supplier::class);
-    // }
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
 
-    // public function meter()
-    // {
-    //     return $this->belongsTo(Meter::class);
-    // }
+    public function meter()
+    {
+        return $this->belongsTo(Meter::class);
+    }
 
-    // public function reading()
-    // {
-    //     return $this->belongsTo(Reading::class);
-    // }
+    public function reading()
+    {
+        return $this->belongsTo(Reading::class);
+    }
 
     public function typedocument() 
     {
