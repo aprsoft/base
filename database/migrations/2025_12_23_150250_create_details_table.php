@@ -13,6 +13,15 @@ return new class extends Migration {
             $table->unsignedInteger('IndExe')->nullable();
             $table->unsignedBigInteger('document_id');
             $table->unsignedBigInteger('service_id')->nullable();
+            $table->unsignedBigInteger('stretche_id')->nullable();
+            //------------------------------------------------
+            $table->unsignedBigInteger('detailstate_id')->nullable();
+            $table->integer('cantidad')->nullable();
+            $table->integer('valor')->nullable();
+            $table->integer('neto')->nullable();
+            $table->integer('iva')->nullable();
+            $table->integer('total')->nullable();
+            //-------------------------------------------------
             $table->unsignedInteger('DscItem')->nullable();
             $table->unsignedInteger('UnmdItem')->nullable();
             $table->unsignedInteger('DescuentoPct')->nullable();

@@ -39,10 +39,59 @@ class MenuHelper
                         'pro' => false
                     ],
                 ],
-            ],        
+            ], 
+            [
+                'icon' => 'file',
+                'name' => 'Contratos',
+                'subItems' => [
+                    [
+                        'name' => 'Listado',
+                        'path' => route('contracts.index', absolute: false),
+                        'permission' => 'contracts.index',
+                        'pro' => false
+                    ],
+                    [
+                        'name' => 'Crear Contrato',
+                        'path' => route('contracts.create', absolute: false),
+                        'permission' => 'contracts.create',
+                        'pro' => false
+                    ],
+                ],
+            ],
+            [
+                'icon' => 'file',
+                'name' => 'Documentos',
+                'subItems' => [
+                    [
+                        'name' => 'Listado',
+                        'path' => route('documents.customer.index', absolute: false),
+                        'permission' => 'documents.customer.index',
+                        'pro' => false
+                    ],
+                    [
+                        'name' => 'Crear Documento',
+                        'path' => route('documents.customer.create', absolute: false),
+                        'permission' => 'documents.customer.create',
+                        'pro' => false
+                    ],
+                ],
+            ],   
+            [
+                'icon' => 'file',
+                'name' => 'medidores',
+                'subItems' => [
+                    [
+                        'name' => 'Listado',
+                        'path' => route('meters.index', absolute: false),
+                        'permission' => 'meters.index',
+                        'pro' => false
+                    ],                   
+                ],
+            ],      
            
         ];
     }
+    
 
     public static function getAdministrationItems(): array
     {
@@ -127,28 +176,7 @@ class MenuHelper
         ];
     }
 
-    // public static function getMenuGroups(): array
-    // {   
-             
-    //     return [
-    //         [
-    //             'title' => 'Menu',
-    //             'items' => self::getMainNavItems()
-    //         ],
-    //         [
-    //             'title' => 'Administration',
-    //             'items' => self::getAdministrationItems()
-    //         ],
-    //         [
-    //             'title' => 'Roles y Permisos',
-    //             'items' => self::getRolesPermissionsItems()
-    //         ],
-    //         [
-    //             'title' => 'Soporte',
-    //             'items' => self::getSupportItems()
-    //         ]
-    //     ];
-    // }
+
     public static function getMenuGroups(): array
     {
         $user = auth('web')->user();
@@ -162,7 +190,7 @@ class MenuHelper
                 'title' => 'Menu',
                 'items' => self::getMainNavItems(),
             ],
-             [
+            [
                 'title' => 'Gestion',
                 'items' => self::getManagementItems(),
             ],

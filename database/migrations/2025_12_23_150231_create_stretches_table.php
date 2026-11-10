@@ -12,7 +12,12 @@ return new class extends Migration
             $table->id();      
             $table->string('name');           
             $table->unsignedInteger('inicio');
-            $table->unsignedInteger('termino');        
+            $table->unsignedInteger('termino');
+            //--------------------------------------------
+
+            $table->unsignedInteger('valor');  
+            
+            //--------------------------------------------        
             $table->unsignedInteger('neto');  
             $table->unsignedInteger('iva');     
             $table->unsignedInteger('total');  

@@ -14,6 +14,36 @@ return new class extends Migration {
             $table->unsignedBigInteger('customer_id')->nullable();
             $table->unsignedBigInteger('supplier_id')->nullable();
             $table->unsignedBigInteger('employee_id')->nullable();
+            
+            //---------------------------------------------------------------------
+
+            $table->unsignedBigInteger('expense_id')->nullable();
+            $table->unsignedInteger('customermeter_id')->nullable();
+            $table->unsignedBigInteger('meter_id')->nullable();
+            $table->unsignedBigInteger('reading_id')->nullable();
+            $table->unsignedBigInteger('agreement_id')->nullable();
+            $table->unsignedBigInteger('documentstate_id')->nullable();
+            $table->unsignedBigInteger('documentstatu_id')->nullable();
+            $table->unsignedBigInteger('typefolio_id')->nullable();
+            $table->unsignedBigInteger('applicationstate_id')->nullable();
+            $table->integer('monto_exento')->nullable();
+            $table->integer('monto_neto')->nullable();
+            $table->integer('TasaIVA')->nullable();
+            $table->integer('monto_iva')->nullable();
+            $table->integer('monto_total')->nullable();
+            $table->integer('valor_pagar')->nullable();
+            $table->integer('monto_periodo')->nullable();
+            $table->integer('lecturaanterior')->nullable();
+            $table->integer('lecturaactual')->nullable();
+            $table->string('mes_cobro', 191)->nullable();
+            $table->string('nota', 191)->nullable();
+            $table->date('fecha_traspaso')->nullable();
+            $table->unsignedBigInteger('previoustypedocument_id')->nullable();
+            $table->date('fecha_pago')->nullable();
+            $table->enum('centro_costo', ['Operaciones','Administracion','Mantencion','Mejoramiento','Varios'])->nullable();
+            $table->unsignedBigInteger('caf_id')->nullable();
+
+            //---------------------------------------------------------------------
             $table->longText('Referencia')->nullable();
             $table->unsignedInteger('TpoDocRef')->nullable();
             $table->unsignedInteger('CodRef')->nullable();

@@ -12,8 +12,15 @@ return new class extends Migration {
         Schema::create('meters', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('parent_id')->nullable();
+
+            //------------------------------------------------------------------------
+
             $table->unsignedBigInteger('meterstate_id')->nullable();
             $table->unsignedBigInteger('metertype_id')->nullable();
+            $table->unsignedBigInteger('sector_id3')->nullable();
+
+            //------------------------------------------------------------------------
+            
             $table->unsignedInteger('user_id')->nullable();
             $table->unsignedInteger('numero_medidor')->unique();
             $table->string('direccion_medidor', 191)->nullable();
