@@ -3,17 +3,27 @@
     {{-- ============================= --}}
     {{-- HEADER --}}
     {{-- ============================= --}}
-    <x-slot name="header">
-        <h2 class="font-semibold text-2xl text-gray-800 dark:text-gray-200 leading-tight">
-            Información del Documento
-        </h2>
-    </x-slot>
+    
+    <h2 class="font-semibold text-2xl text-gray-800 dark:text-gray-200 leading-tight">
+        Información del Documento
+    </h2>
+        <div>
+            @can('view', $document)
+
+                <livewire:pdf.pdf-actions
+                    type="document.dte"
+                    :record-id="$document->id"
+                    :key="'document-pdf-'.$document->id"
+                />
+
+            @endcan
+        </div>
+
 
     {{-- ============================= --}}
     {{-- CONTENIDO --}}
     {{-- ============================= --}}
     <div class="py-10">
-        {{-- <livewire:pdf.pdf-actions type="documents.customer" :record-id="$document->id" :key="'documents-customer-pdf-'.$document->id" /> --}}
 
         <div class="max-w-screen-2xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 shadow-xl rounded-2xl overflow-hidden">
@@ -190,6 +200,8 @@
                                 Acciones
                             </h3>
 
+                           
+
                             {{-- <div class="flex flex-col gap-4">                                
 
                                 <x-buttons.pdf-action-button
@@ -208,11 +220,12 @@
                             </div> --}}
 
                         </div>
-                        <livewire:pdf.pdf-actions type="document.dte" :record-id="$document->id" :key="'document-pdf-'.$document->id" />
+                       
 
                     </div>
+               
 
-
+                          
                     {{-- ========================================= --}}
                     {{-- TABLA DETALLE --}}
                     {{-- ========================================= --}}

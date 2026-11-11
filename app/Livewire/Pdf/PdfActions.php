@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Livewire\Pdf;
 
 use App\Jobs\SendPdfEmailJob;
+use App\Models\User;
 use App\Services\Pdf\PdfGenerator;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -30,9 +32,14 @@ final class PdfActions extends Component
 
     public function mount(string $type, int $recordId): void
     {
-        $actor = Auth::guard('web')->user();
-        abort_unless($actor, 403);
-        app(PdfGenerator::class)->authorize($type, $recordId, $actor, 'view');
+        $actor = $this->actor();
+
+        app(PdfGenerator::class)->authorize(
+            $type,
+            $recordId,
+            $actor,
+            'view'
+        );
 
         $this->type = $type;
         $this->recordId = $recordId;
@@ -40,30 +47,45 @@ final class PdfActions extends Component
 
     public function openEmail(): void
     {
-        $actor = Auth::guard('web')->user();
-        abort_unless($actor, 403);
-        app(PdfGenerator::class)->authorize($this->type, $this->recordId, $actor, 'email');
+        $pdfs = app(PdfGenerator::class);
+
+        $pdfs->authorize(
+            $this->type,
+            $this->recordId,
+            $this->actor(),
+            'email'
+        );
 
         $this->resetValidation();
+
         $this->notice = '';
         $this->newRecipient = false;
-        $this->recipient = app(PdfGenerator::class)
+
+        $this->recipient = $pdfs
             ->document($this->type)
             ->defaultRecipient($this->recordId) ?? '';
+
         $this->showEmailForm = true;
     }
 
     public function updatedNewRecipient(bool $checked): void
     {
-        $actor = Auth::guard('web')->user();
-        abort_unless($actor && $this->showEmailForm, 403);
+        abort_unless($this->showEmailForm, 403);
 
         $pdfs = app(PdfGenerator::class);
-        $pdfs->authorize($this->type, $this->recordId, $actor, 'email');
+
+        $pdfs->authorize(
+            $this->type,
+            $this->recordId,
+            $this->actor(),
+            'email'
+        );
 
         $this->recipient = $checked
             ? ''
-            : ($pdfs->document($this->type)->defaultRecipient($this->recordId) ?? '');
+            : ($pdfs
+                ->document($this->type)
+                ->defaultRecipient($this->recordId) ?? '');
 
         $this->resetValidation('recipient');
     }
@@ -75,45 +97,94 @@ final class PdfActions extends Component
 
     public function send(): void
     {
-        $actor = Auth::guard('web')->user();
-        abort_unless($actor, 403);
-        app(PdfGenerator::class)->authorize($this->type, $this->recordId, $actor, 'email');
         abort_unless($this->showEmailForm, 403);
 
-        // Evitar que una manipulación del estado del navegador desvíe el envío
-        // cuando no se ha activado expresamente «Nuevo destinatario».
-        $this->recipient = $this->newRecipient
-            ? trim($this->recipient)
-            : (app(PdfGenerator::class)->document($this->type)
-                ->defaultRecipient($this->recordId) ?? '');
+        $actor = $this->actor();
+        $pdfs = app(PdfGenerator::class);
+
+        $pdfs->authorize(
+            $this->type,
+            $this->recordId,
+            $actor,
+            'email'
+        );
+
+        if ($this->newRecipient) {
+            $this->recipient = trim($this->recipient);
+        } else {
+            $this->recipient = $pdfs
+                ->document($this->type)
+                ->defaultRecipient($this->recordId) ?? '';
+        }
 
         $validated = $this->validate([
-            'recipient' => ['required', 'email:rfc', 'max:254'],
+            'recipient' => [
+                'required',
+                'email:rfc',
+                'max:254',
+            ],
         ]);
 
         $key = 'pdf-email:'.$actor->getAuthIdentifier();
-        abort_if(RateLimiter::tooManyAttempts($key, 5), 429, 'Demasiadas solicitudes de envío.');
+
+        abort_if(
+            RateLimiter::tooManyAttempts($key, 5),
+            429,
+            'Demasiadas solicitudes de envío.'
+        );
 
         SendPdfEmailJob::dispatch(
             $this->type,
             $this->recordId,
             (int) $actor->getAuthIdentifier(),
-            trim($validated['recipient']),
+            trim($validated['recipient'])
         );
 
         RateLimiter::hit($key, 60);
+
         $this->showEmailForm = false;
-        $this->notice = 'Solicitud de envío registrada. El correo se enviará cuando se procese la cola.';
+        $this->notice = 'Solicitud de envío registrada. '
+            .'El correo se enviará cuando se procese la cola.';
     }
 
     public function render(): View
     {
-        $actor = Auth::guard('web')->user();
-        abort_unless($actor, 403);
-        app(PdfGenerator::class)->authorize($this->type, $this->recordId, $actor, 'view');
+        $actor = $this->actor();
+        $pdfs = app(PdfGenerator::class);
+
+        $pdfs->authorize(
+            $this->type,
+            $this->recordId,
+            $actor,
+            'view'
+        );
+
+        $canEmail = false;
+
+        try {
+            $pdfs->authorize(
+                $this->type,
+                $this->recordId,
+                $actor,
+                'email'
+            );
+
+            $canEmail = true;
+        } catch (AuthorizationException) {
+            $canEmail = false;
+        }
 
         return view('livewire.pdf.pdf-actions', [
-            'canEmail' => \Illuminate\Support\Facades\Gate::forUser($actor)->allows('update', \App\Models\User::withTrashed()->findOrFail($this->recordId)),
+            'canEmail' => $canEmail,
         ]);
+    }
+
+    private function actor(): User
+    {
+        $actor = Auth::guard('web')->user();
+
+        abort_unless($actor instanceof User, 403);
+
+        return $actor;
     }
 }

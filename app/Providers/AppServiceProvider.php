@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Document;
 use App\Models\ErrorLog;
 use App\Models\User;
+use App\Policies\DocumentPolicy;
 use App\Policies\ErrorLogPolicy;
 use App\Policies\PermissionPolicy;
 use App\Policies\ProfilePolicy;
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Document::class, DocumentPolicy::class);
         Gate::policy(Role::class, RolePolicy::class);
         Gate::policy(Permission::class, PermissionPolicy::class);
         Gate::policy(ErrorLog::class, ErrorLogPolicy::class);
@@ -44,6 +47,7 @@ class AppServiceProvider extends ServiceProvider
 
             $protectedModels = [
                 User::class,
+                Document::class,
                 Role::class,
                 Permission::class,
                 ErrorLog::class,
