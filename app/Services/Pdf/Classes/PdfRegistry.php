@@ -13,7 +13,7 @@ final class PdfRegistry
         // Nunca resolver clases o vistas arbitrarias desde una petición HTTP.
         return match ($type) {
             'user.profile' => app(UserProfilePdf::class),
-            'document.dte' => app(UserProfilePdf::class),
+            'document.dte' => app(DocumentDtePdf::class),
             default => abort(404),
         };
     }
