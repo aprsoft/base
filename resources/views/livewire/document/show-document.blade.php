@@ -1,4 +1,4 @@
-><div class="space-y-6">
+<div class="space-y-6">
     
     {{-- ============================= --}}
     {{-- HEADER --}}
@@ -208,9 +208,9 @@
                             </div> --}}
 
                         </div>
+                        {{-- <livewire:pdf.pdf-actions type="document.dte" :record-id="$document->id" :key="'document-pdf-'.$document->id" /> --}}
 
                     </div>
-                        {{-- <livewire:pdf.pdf-actions type="document.dte" :record-id="$document->id" :key="'document-pdf-'.$document->id" /> --}}
 
 
                     {{-- ========================================= --}}
