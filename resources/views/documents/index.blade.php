@@ -34,7 +34,7 @@
 
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
                     <span class="text-lg font-semibold text-indigo-600 dark:text-indigo-400">
-                        {{ $customer->fullName }}
+                        {{ $title}}
                     </span>
                 </h1>
 

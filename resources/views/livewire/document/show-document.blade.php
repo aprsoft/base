@@ -1,4 +1,4 @@
-<div class="space-y-6">
+><div class="space-y-6">
     
     {{-- ============================= --}}
     {{-- HEADER --}}
@@ -8,6 +8,7 @@
             Información del Documento
         </h2>
     </x-slot>
+
     {{-- ============================= --}}
     {{-- CONTENIDO --}}
     {{-- ============================= --}}
@@ -209,6 +210,8 @@
                         </div>
 
                     </div>
+                        {{-- <livewire:pdf.pdf-actions type="document.dte" :record-id="$document->id" :key="'document-pdf-'.$document->id" /> --}}
+
 
                     {{-- ========================================= --}}
                     {{-- TABLA DETALLE --}}
