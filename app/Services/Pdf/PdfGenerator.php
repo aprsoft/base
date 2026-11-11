@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Pdf;
 
 use App\Models\User;
-use App\Pdf\Contracts\PdfDocument;
-use App\Pdf\PdfRegistry;
+use App\Services\Pdf\Contracts\PdfDocument;
+use App\Services\Pdf\PdfRegistry;
 use Spatie\LaravelPdf\Facades\Pdf;
 use Spatie\LaravelPdf\PdfBuilder;
 
