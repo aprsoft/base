@@ -94,6 +94,7 @@ final class TimbrePdf417Service
         if (preg_match('~<(?P<tag>(?:[A-Za-z_][\w.-]*:)?TED)\b[^>]*>.*?</(?P=tag)\s*>~s', $xml, $partes) !== 1) {
             throw new InvalidArgumentException('No fue posible extraer el TED original.');
         }
+        //dd($partes[0]);
 
         return $partes[0];
     }
