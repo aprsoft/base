@@ -298,10 +298,14 @@
                     <h2 class="mb-3 text-base font-semibold text-gray-900 dark:text-white">Cliente</h2>
                     <label class="flex cursor-pointer items-center gap-2 text-sm">
                         <input type="checkbox" wire:model.live="clienteGenerico" class="size-4 rounded border-gray-300 text-blue-600">
+                        
                         <span>Cliente genérico</span>
                     </label>
                     @if (!$clienteGenerico)
                         <div class="mt-4 space-y-3">
+                            <div>
+                                <a href="{{ route('customers.create') }}" class="flex justify-center rounded-lg border border-blue-600 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-700">+ Crear cliente</a>
+                            </div>
                             <div>
                                 <label class="mb-1 block text-sm font-medium">Buscar cliente</label>
                                 <input type="search" wire:model.live.debounce.300ms="busquedaCliente" placeholder="Buscar por RUT o nombre..." class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900">
@@ -322,7 +326,6 @@
                                     @endforelse
                                 </div>
                             @endif
-                            <a href="{{ route('customers.create') }}" class="flex justify-center rounded-lg border border-blue-600 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-700">+ Crear cliente</a>
                             @php
                                 $clienteActual = $this->clienteSeleccionado;
                                 $nombreCliente = $clienteActual
