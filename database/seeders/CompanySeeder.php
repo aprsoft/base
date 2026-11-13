@@ -24,7 +24,7 @@ class CompanySeeder extends Seeder
                 'codigo_sii_sucursal' => '81303347',
                 'url'=> 'https://dev-api.haulmer.com/v2/dte/document',
                 'url_document_received'=>'https://dev-api.haulmer.com/v2/dte/document/received',
-                'url_document_detail'=>'https://dev-api.haulmer.com/v2/dte/document/'             
+                'url_document'=>'https://dev-api.haulmer.com/v2/dte/document/'             
             ]);
     }
 }

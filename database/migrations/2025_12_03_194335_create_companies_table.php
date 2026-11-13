@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('apikey');
             $table->string('url');
             $table->string('url_document_received');
-            $table->string('url_document_detail');
+            $table->string('url_document');
             $table->string('codigo_sii_sucursal'); 
             $table->string('comuna_origen');       
             $table->string('contacto')->nullable();         

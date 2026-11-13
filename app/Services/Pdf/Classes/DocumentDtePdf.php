@@ -6,7 +6,7 @@ namespace App\Services\Pdf\Classes;
 
 use App\Models\Document;
 use App\Models\User;
-use App\Services\Dte\Get\DteGetManager;
+use App\Services\Dte\Get\DteApiCompanieGet;
 use App\Services\Dte\Stamp\TimbrePdf417Service;
 use App\Services\Pdf\Classes\Contracts\PdfDocument;
 use Illuminate\Support\Facades\Gate;
@@ -48,14 +48,12 @@ final class DocumentDtePdf implements PdfDocument
             ])
             ->findOrFail($recordId);
 
-            $dteGetManager = new DteGetManager;
-            $response = $dteGetManager->manager('xml');
-
-            $stamp = app(TimbrePdf417Service::class)->generar($response['xml']);
+            $response = app(DteApiCompanieGet::class)->get($document,'xml');
+            $stamp    = app(TimbrePdf417Service::class)->generar($response['xml']);
 
         return [
             'document' => $document,
-            'stamp' =>  $stamp,
+            'stamp'    => $stamp,
         ];
     }
 
