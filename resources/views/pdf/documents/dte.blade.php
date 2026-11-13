@@ -68,6 +68,23 @@
 
     // $stamp es PNG binario, tal como lo entrega TimbrePdf417Service::generar().
     $timbreBase64 = isset($stamp) && is_string($stamp) && $stamp !== '' ? base64_encode($stamp) : null;
+
+
+    $timbreAnchoMm = null;
+
+    if ($timbreBase64 !== null) {
+        $dimensiones = getimagesizefromstring($stamp);
+
+        if ($dimensiones !== false) {
+            // Imprimir el PNG a los 600 DPI previstos
+            // por TimbrePdf417Service.
+            $timbreAnchoMm = round(
+                $dimensiones[0] * 25.4 / 600,
+                2
+            );
+        }
+    }
+
 @endphp
 
 <div class="no-print mx-auto flex max-w-[210mm] justify-end px-3 py-4">
@@ -208,13 +225,29 @@
         <div class="grid grid-cols-1 items-end gap-4 border-t border-slate-200 pt-4 sm:grid-cols-[1fr_auto]">
             <div>
                 <h2 class="text-xs font-extrabold text-slate-800">Timbre Electrónico SII</h2>
-                @if ($timbreBase64)
+                {{-- @if ($timbreBase64)
                     <img src="data:image/png;base64,{{ $timbreBase64 }}"
                          class="mt-2 h-auto w-[90mm] max-w-full object-contain"
                          alt="Timbre electrónico PDF417 del DTE">
                 @else
                     <p class="mt-2 text-xs text-red-700">No se recibió el timbre PDF417.</p>
+                @endif --}}
+
+                @if ($timbreBase64 && $timbreAnchoMm !== null)
+                    <img
+                        src="data:image/png;base64,{{ $timbreBase64 }}"
+                        alt="Timbre electrónico PDF417 del DTE"
+                        class="mt-2 block"
+                        style="width: {{ $timbreAnchoMm }}mm;
+                            height: auto;
+                            max-width: none;"
+                    >
+                @else
+                    <p class="mt-2 text-xs text-red-700">
+                        No se recibió un timbre PDF417 válido como imagen.
+                    </p>
                 @endif
+
                 <p class="mt-2 text-[10px] text-slate-600">Verifique documento en www.sii.cl</p>
             </div>
             <div class="rounded-xl border-2 border-sky-500 px-5 py-3 text-right">

@@ -140,7 +140,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('documents')->name('documents.')->controller(DocumentController::class)->group(function () {
         // Específicas antes de las rutas con parámetros opcionales.
         // Se mantiene index() hasta confirmar que existe create() en el controlador.
-        Route::get('customer/create', 'index')->name('customer.create');
+        Route::get('customer/create', 'create')->name('customer.create');
 
         Route::get('customer/{customer?}', 'index')->name('customer.index');
         Route::get('supplier/{supplier?}', 'index')->name('supplier.index');

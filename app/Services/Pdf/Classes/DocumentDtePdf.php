@@ -48,12 +48,13 @@ final class DocumentDtePdf implements PdfDocument
             ])
             ->findOrFail($recordId);
 
-            $response = app(DteApiCompanieGet::class)->get($document,'xml');
-            $stamp    = app(TimbrePdf417Service::class)->generar($response['xml']);
+            $dteApiCompanieGet = new DteApiCompanieGet;
+            $response          = $dteApiCompanieGet->get($document,'xml');
+            $stamp             = app(TimbrePdf417Service::class)->generar($response['xml']);
 
         return [
             'document' => $document,
-            'stamp'    => $stamp,
+            'stamp'    =>  $stamp,
         ];
     }
 

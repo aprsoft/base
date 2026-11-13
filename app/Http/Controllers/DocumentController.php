@@ -47,20 +47,10 @@ class DocumentController extends Controller
 
     public function create()
     {
-        return view('documents.create');
+        return view('documents.customer.create');
     }  
 
-    // public function show(Document $document, bool $Api = False)
-    // {
-    //     $dteGetManager = new DteGetManager;
-    //     $response = $dteGetManager->manager('xml');
-
-    //     $stamp = app(TimbrePdf417Service::class)->generar($response['xml']);
-      
-
-
-    //     return view('documents.show',compact('document','stamp'));
-    // }
+  
    
 
 
